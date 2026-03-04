@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبۆردی بەڕێوەبردن - RV</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; background-color: #f1f5f9; color: #1e293b; } 
+        .tab-content { display: none; opacity: 0; transition: opacity 0.4s ease; } 
+        .tab-content.active { display: block; opacity: 1; animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .rich-editor { min-height: 150px; outline: none; }
+        .rich-editor:empty:before { content: attr(placeholder); color: #94a3b8; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; } 
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 8px 4px; color: #64748b; transition: all 0.3s; border-radius: 12px; }
+        .nav-btn.active { color: #4f46e5; background-color: #e0e7ff; font-weight: bold; }
+        .nav-btn i { font-size: 1.25rem; margin-bottom: 4px; transition: transform 0.3s; }
+        .nav-btn.active i { transform: translateY(-2px) scale(1.1); }
+        .nav-btn span { font-size: 0.65rem; white-space: nowrap; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden relative selection:bg-indigo-200">
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900 overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-900 opacity-80"></div>
+        <div class="absolute w-96 h-96 bg-indigo-500 rounded-full blur-[100px] opacity-30 -top-20 -left-20"></div>
+        <div class="absolute w-96 h-96 bg-purple-500 rounded-full blur-[100px] opacity-30 bottom-0 right-0"></div>
+        
+        <div class="bg-white/10 backdrop-blur-2xl p-8 md:p-10 rounded-[2rem] shadow-2xl border border-white/20 w-full max-w-md mx-4 relative z-10">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-indigo-500 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg"><i class="fa-solid fa-lock"></i></div>
+                <h2 class="text-3xl font-black text-white tracking-tight">چوونەژوورەوە</h2>
+            </div>
+            
+            <div id="firstTimeSetup" class="hidden space-y-4 mb-6">
+                <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                    <label class="text-xs font-bold text-slate-300 block mb-1">ناوی گیتهەب</label>
+                    <input type="text" id="ghUser" class="w-full bg-white/10 border-0 p-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none" dir="ltr" value="kurd-apps">
+                    <label class="text-xs font-bold text-slate-300 block mb-1 mt-3">ناوی ڕیپۆزیتۆری</label>
+                    <input type="text" id="ghRepo" class="w-full bg-white/10 border-0 p-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none" dir="ltr" value="RV">
+                    <label class="text-xs font-bold text-slate-300 block mb-1 mt-3">تۆکن (ghp_...)</label>
+                    <input type="password" id="ghToken" class="w-full bg-white/10 border-0 p-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none" dir="ltr">
+                </div>
+            </div>
+            
+            <label class="text-xs font-bold text-slate-300 block mb-2 text-center">پاسوۆردی داشبۆرد</label>
+            <input type="password" id="loginPass" class="w-full bg-white text-slate-900 border-0 p-4 rounded-xl mb-6 text-center text-lg font-bold shadow-inner focus:ring-4 focus:ring-indigo-500 outline-none transition-all" placeholder="••••••••">
+            
+            <div id="loginError" class="hidden bg-red-500/20 text-red-200 border border-red-500/50 p-3 rounded-xl text-sm font-bold mb-6 text-center backdrop-blur-sm"></div>
+            
+            <button onclick="startLoginProcess()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-black py-4 rounded-xl shadow-lg hover:shadow-indigo-500/50 transition-all duration-300" id="btnLogin">چوونەژوورەوە <i class="fa-solid fa-arrow-left mr-2"></i></button>
+            <button onclick="resetLogin()" class="w-full text-slate-400 hover:text-white text-xs font-bold mt-6 transition-colors">ڕیسێتکردنی داتاکانی گیتهەب</button>
+        </div>
+    </div>
+
+    <!-- Gallery Modal -->
+    <div id="galleryModal" class="fixed inset-0 z-[120] bg-slate-900/90 backdrop-blur-sm hidden flex-col items-center justify-center p-4">
+        <div class="bg-white w-full max-w-6xl h-[85vh] rounded-[2rem] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-fadeIn">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-black text-xl text-slate-800"><i class="fa-solid fa-images text-indigo-500 ml-2"></i>گەلەری وێنەکان</h3>
+                <button onclick="closeGallery()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2 rounded-xl font-bold transition-colors">داخستن <i class="fa-solid fa-xmark ml-1"></i></button>
+            </div>
+            <div id="galleryGrid" class="p-6 flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 bg-slate-50/50"></div>
+        </div>
+    </div>
+
+    <!-- Desktop Sidebar -->
+    <aside class="hidden md:flex w-72 bg-[#0f172a] text-slate-300 flex-col h-screen fixed right-0 border-l border-slate-800 z-40">
+        <div class="p-8 pb-4">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/30">RV</div>
+                <h1 class="text-2xl font-black text-white tracking-tight">داشبۆرد.</h1>
+            </div>
+        </div>
+        <nav class="flex-1 px-4 flex flex-col gap-2 overflow-y-auto hide-scrollbar" id="sidebarNavDesktop">
+            <button onclick="switchTab('hero')" class="side-btn active flex items-center gap-3 w-full text-right px-4 py-3.5 rounded-xl font-bold text-sm bg-indigo-600 text-white transition-all"><i class="fa-solid fa-user w-5 text-center"></i> سەرەکی و وێنە</button>
+            <button onclick="switchTab('business')" class="side-btn flex items-center gap-3 w-full text-right px-4 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 hover:text-white transition-all"><i class="fa-solid fa-building w-5 text-center"></i> بزنسەکان</button>
+            <button onclick="switchTab('cv')" class="side-btn flex items-center gap-3 w-full text-right px-4 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 hover:text-white transition-all"><i class="fa-solid fa-file-alt w-5 text-center"></i> ئەزموون</button>
+            <button onclick="switchTab('projects')" class="side-btn flex items-center gap-3 w-full text-right px-4 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 hover:text-white transition-all"><i class="fa-solid fa-rocket w-5 text-center"></i> پڕۆژەکان</button>
+            <button onclick="switchTab('contact')" class="side-btn flex items-center gap-3 w-full text-right px-4 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 hover:text-white transition-all"><i class="fa-solid fa-address-card w-5 text-center"></i> پەیوەندی</button>
+            
+            <div class="my-2 border-t border-slate-800"></div>
+            <button onclick="switchTab('extra')" class="side-btn flex items-center gap-3 w-full text-right px-4 py-3.5 rounded-xl font-bold text-sm text-amber-400 hover:bg-slate-800 hover:text-amber-300 transition-all"><i class="fa-solid fa-plus-circle w-5 text-center"></i> زانیاری زیادە</button>
+        </nav>
+        <div class="p-6 border-t border-slate-800">
+            <button onclick="saveAllToGithub()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white py-4 rounded-xl font-black shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up"></i> بڵاوکردنەوە
+            </button>
+        </div>
+    </aside>
+
+    <!-- Mobile Bottom Nav -->
+    <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-xl border-t border-slate-200 z-40 flex justify-around px-2 py-3 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+        <button onclick="switchTab('hero')" class="nav-btn active" data-target="hero"><i class="fa-solid fa-user"></i><span>سەرەکی</span></button>
+        <button onclick="switchTab('business')" class="nav-btn" data-target="business"><i class="fa-solid fa-building"></i><span>بزنس</span></button>
+        <button onclick="switchTab('cv')" class="nav-btn" data-target="cv"><i class="fa-solid fa-file-alt"></i><span>ئەزموون</span></button>
+        <button onclick="switchTab('projects')" class="nav-btn" data-target="projects"><i class="fa-solid fa-rocket"></i><span>پڕۆژە</span></button>
+        <button onclick="switchTab('contact')" class="nav-btn" data-target="contact"><i class="fa-solid fa-address-card"></i><span>پەیوەندی</span></button>
+        <button onclick="switchTab('extra')" class="nav-btn text-amber-500" data-target="extra"><i class="fa-solid fa-plus-circle"></i><span>زیادە</span></button>
+    </nav>
+    
+    <!-- Mobile Floating Save Button -->
+    <button onclick="saveAllToGithub()" class="md:hidden fixed top-4 right-4 z-50 bg-gradient-to-r from-emerald-500 to-teal-600 text-white w-12 h-12 rounded-full font-black shadow-xl shadow-emerald-500/30 flex items-center justify-center text-lg active:scale-95 transition-transform"><i class="fa-solid fa-cloud-arrow-up"></i></button>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 w-full md:mr-72 overflow-x-hidden overflow-y-auto p-4 md:p-10 pb-28 md:pb-10 relative">
+        <p id="statusMsg" class="fixed top-6 left-1/2 transform -translate-x-1/2 font-bold text-sm md:text-base bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl z-[150] hidden transition-all border border-slate-700 flex items-center gap-2"></p>
+
+        <!-- Hero & Info -->
+        <div id="tab-hero" class="tab-content active max-w-4xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">زانیاری سەرەکی</h2>
+                <p class="text-slate-500 mt-2 font-medium">ئەم زانیارییانە لە سەرەتای وێبسایتەکەت دەردەکەون.</p>
+            </div>
+            
+            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 mb-8">
+                <div class="flex flex-col md:flex-row gap-8 items-center text-center md:text-right">
+                    <div class="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-indigo-50 shadow-inner bg-slate-100 shrink-0 group">
+                        <img id="profilePreview" src="" class="absolute w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                    </div>
+                    <div class="flex-1 w-full space-y-4">
+                        <div>
+                            <label class="font-bold text-xs text-slate-500 uppercase tracking-widest block mb-2">وێنەی پڕۆفایل</label>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input type="file" id="heroImageInput" class="bg-slate-50 border border-slate-200 p-2 rounded-xl text-sm w-full focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                                <div class="flex gap-2">
+                                    <button onclick="uploadProfileImage()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl font-bold text-sm transition-colors w-full sm:w-auto shadow-sm">ئەپلۆد <i class="fa-solid fa-cloud-arrow-up ml-1"></i></button>
+                                    <button onclick="openGallery('hero')" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-5 py-2 rounded-xl font-bold text-sm transition-colors w-full sm:w-auto shadow-sm">گەلەری <i class="fa-solid fa-image ml-1"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <label class="font-bold text-xs text-slate-500 block mb-3">جووڵاندنی وێنە (بۆ ئەوەی ڕووخسارت ڕێک دەرکەوێت)</label>
+                            <div class="flex flex-col gap-3">
+                                <div class="flex items-center gap-3"><span class="text-xs font-bold text-slate-400 w-4">X:</span><input type="range" id="heroPosX" min="0" max="100" value="50" class="w-full accent-indigo-600" oninput="updateImagePos()"></div>
+                                <div class="flex items-center gap-3"><span class="text-xs font-bold text-slate-400 w-4">Y:</span><input type="range" id="heroPosY" min="0" max="100" value="50" class="w-full accent-indigo-600" oninput="updateImagePos()"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-8 flex flex-col md:flex-row gap-6 items-center">
+                <div class="w-24 h-12 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-center overflow-hidden shrink-0 shadow-inner relative">
+                    <img id="navLogoPreview" src="" class="h-full object-contain relative z-10 p-1">
+                </div>
+                <div class="flex-1 w-full">
+                    <label class="font-bold text-xs text-slate-500 uppercase tracking-widest block mb-2">لۆگۆی ناڤباری سایت</label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="file" id="navLogoInput" class="bg-slate-50 border border-slate-200 p-2 rounded-xl text-sm flex-1 outline-none">
+                        <div class="flex gap-2">
+                            <button onclick="uploadNavLogo()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl font-bold text-sm shadow-sm">ئەپلۆد</button>
+                            <button onclick="openGallery('navLogo')" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-5 py-2 rounded-xl font-bold text-sm shadow-sm">گەلەری</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+                <div><label class="text-xs font-bold text-slate-400 mb-1 block">ناوی تەواو (کوردی)</label><input type="text" id="h-name-ku" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 mb-1 flex justify-between items-center"><span>Full Name (EN)</span><button onclick="autoTranslate('h-name-ku', 'h-name-en')" class="text-amber-500 hover:text-amber-600"><i class="fa-solid fa-wand-magic-sparkles"></i> وەرگێڕان</button></label>
+                    <input type="text" id="h-name-en" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" dir="ltr">
+                </div>
+                
+                <div><label class="text-xs font-bold text-slate-400 mb-1 block">پیشە (کوردی)</label><input type="text" id="h-title-ku" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 mb-1 flex justify-between items-center"><span>Job Title (EN)</span><button onclick="autoTranslate('h-title-ku', 'h-title-en')" class="text-amber-500 hover:text-amber-600"><i class="fa-solid fa-wand-magic-sparkles"></i> وەرگێڕان</button></label>
+                    <input type="text" id="h-title-en" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" dir="ltr">
+                </div>
+                
+                <div class="md:col-span-2"><label class="text-xs font-bold text-slate-400 mb-1 block">دەربارەی من (کوردی)</label><textarea id="a-desc-ku" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl h-32 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none leading-relaxed"></textarea></div>
+                <div class="md:col-span-2">
+                    <label class="text-xs font-bold text-slate-400 mb-1 flex justify-between items-center"><span>About Me (EN)</span><button onclick="autoTranslate('a-desc-ku', 'a-desc-en')" class="text-amber-500 hover:text-amber-600"><i class="fa-solid fa-wand-magic-sparkles"></i> وەرگێڕانی زیرەک</button></label>
+                    <textarea id="a-desc-en" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl h-32 text-sm focus:ring-2 focus:ring-indigo-500 outline-none resize-none leading-relaxed" dir="ltr"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Businesses -->
+        <div id="tab-business" class="tab-content max-w-5xl mx-auto">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">🏢 بزنسەکانم</h2>
+                    <p class="text-slate-500 mt-2 font-medium">ئەو پڕۆژە و بزنسانەی کە خاوەندارێتییان دەکەیت.</p>
+                </div>
+                <button onclick="addBusinessUI()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-indigo-500/20 transition-all">+ زیادکردن</button>
+            </div>
+            <div id="businessContainer" class="space-y-6"></div>
+        </div>
+
+        <!-- CV & Skills & Clients -->
+        <div id="tab-cv" class="tab-content max-w-5xl mx-auto">
+            <div class="mb-12">
+                <div class="flex justify-between items-end mb-6">
+                    <h2 class="text-3xl font-black text-slate-800 tracking-tight">📄 ئەزموونەکان (CV)</h2>
+                    <button onclick="addCvUI()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm transition-all">+ زیادکردن</button>
+                </div>
+                <div id="cvContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+            </div>
+
+            <div class="mb-12 border-t border-slate-200 pt-12">
+                <div class="flex justify-between items-end mb-6">
+                    <h2 class="text-3xl font-black text-slate-800 tracking-tight">💡 شارەزاییەکان</h2>
+                    <button onclick="addSkillUI()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-sm transition-all">+ زیادکردن</button>
+                </div>
+                <div id="skillsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+
+            <div class="border-t border-slate-200 pt-12">
+                <h2 class="text-3xl font-black text-slate-800 tracking-tight mb-2">٤. هاوبەشەکان (کۆمپانیاکان)</h2>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 flex flex-col md:flex-row gap-3 items-center">
+                    <input type="file" id="clientImgInput" class="bg-slate-50 border border-slate-200 p-2 rounded-xl flex-1 text-sm w-full outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button onclick="uploadClientLogo()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-bold text-sm flex-1 shadow-sm transition-colors">ئەپلۆد</button>
+                        <button onclick="openGallery('client')" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-6 py-2 rounded-xl font-bold text-sm flex-1 shadow-sm transition-colors">گەلەری</button>
+                    </div>
+                </div>
+                <div id="clientsContainer" class="flex flex-wrap gap-4 bg-white p-6 rounded-3xl border border-slate-200 min-h-[150px] shadow-inner"></div>
+            </div>
+        </div>
+        
+        <!-- Contact -->
+        <div id="tab-contact" class="tab-content max-w-4xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">📞 پەیوەندی و سۆشیاڵ میدیا</h2>
+                <p class="text-slate-500 mt-2 font-medium">زانیارییەکانی پەیوەندیکردنت لێرەدا ڕێکبخە.</p>
+            </div>
+            
+            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 space-y-5 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div><label class="text-xs font-bold text-slate-400 mb-1 block">ئیمەیڵ (Email)</label><div class="relative"><i class="fa-solid fa-envelope absolute left-4 top-3.5 text-slate-400"></i><input type="email" id="c-email" class="w-full bg-slate-50 border border-slate-200 p-3 pl-10 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" dir="ltr"></div></div>
+                    <div><label class="text-xs font-bold text-slate-400 mb-1 block">ژمارە تەلەفۆن (Phone)</label><div class="relative"><i class="fa-solid fa-phone absolute left-4 top-3.5 text-slate-400"></i><input type="text" id="c-phone" class="w-full bg-slate-50 border border-slate-200 p-3 pl-10 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" dir="ltr"></div></div>
+                    <div><label class="text-xs font-bold text-slate-400 mb-1 block">ناونیشان (کوردی)</label><input type="text" id="c-addr-ku" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-400 mb-1 flex justify-between items-center"><span>Address (EN)</span><button onclick="autoTranslate('c-addr-ku', 'c-addr-en')" class="text-amber-500 hover:text-amber-600"><i class="fa-solid fa-wand-magic-sparkles"></i></button></label>
+                        <input type="text" id="c-addr-en" class="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none" dir="ltr">
+                    </div>
+                </div>
+                <div class="border-t border-slate-100 pt-5 mt-2">
+                    <label class="text-sm font-bold text-indigo-700 mb-2 block flex items-center gap-2"><i class="fa-solid fa-paper-plane"></i> کۆدی فۆڕمی Web3Forms</label>
+                    <p class="text-xs text-slate-500 mb-3">ئەگەر دەتەوێت فۆڕمی ناردنی نامە لە سایتەکەت کار بکات، کۆدەکە لێرە دابنێ.</p>
+                    <input type="text" id="c-form-key" class="w-full bg-indigo-50 border border-indigo-100 p-4 rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none" dir="ltr" placeholder="e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                </div>
+            </div>
+
+            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+                <h3 class="font-black text-xl text-slate-800 mb-6 border-b border-slate-100 pb-3">لینکەکانی سۆشیاڵی شەخسی</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all"><div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-600 text-xl shadow-sm"><i class="fa-brands fa-facebook-f"></i></div><input type="url" id="s-fb" class="bg-transparent border-0 flex-1 text-sm outline-none" dir="ltr" placeholder="Facebook URL"></div>
+                    <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100 focus-within:border-pink-500 focus-within:ring-1 focus-within:ring-pink-500 transition-all"><div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-pink-600 text-xl shadow-sm"><i class="fa-brands fa-instagram"></i></div><input type="url" id="s-ig" class="bg-transparent border-0 flex-1 text-sm outline-none" dir="ltr" placeholder="Instagram URL"></div>
+                    <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100 focus-within:border-red-500 focus-within:ring-1 focus-within:ring-red-500 transition-all"><div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-red-600 text-xl shadow-sm"><i class="fa-brands fa-youtube"></i></div><input type="url" id="s-yt" class="bg-transparent border-0 flex-1 text-sm outline-none" dir="ltr" placeholder="YouTube URL"></div>
+                    <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100 focus-within:border-blue-800 focus-within:ring-1 focus-within:ring-blue-800 transition-all"><div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-800 text-xl shadow-sm"><i class="fa-brands fa-behance"></i></div><input type="url" id="s-be" class="bg-transparent border-0 flex-1 text-sm outline-none" dir="ltr" placeholder="Behance URL"></div>
+                </div>
+
+                <div class="mt-8 border-t border-slate-100 pt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <label class="text-sm font-bold text-slate-700">لینکە زیادەکان بۆ بەشی پەیوەندی</label>
+                        <button type="button" onclick="addContactExtraLink()" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">+ لینکی زیادە</button>
+                    </div>
+                    <div id="contactExtraLinks" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects -->
+        <div id="tab-projects" class="tab-content max-w-6xl mx-auto">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">🚀 پڕۆژەکان</h2>
+                    <p class="text-slate-500 mt-2 font-medium">کارەکانت لێرەدا زیاد بکە و ڕێکیان بخە.</p>
+                </div>
+                <button onclick="addNewProject()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold shadow-md shadow-indigo-500/20 transition-all">+ پڕۆژەی نوێ</button>
+            </div>
+            
+            <div id="projectsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+
+            <div id="projectEditorModal" class="fixed inset-0 md:relative md:inset-auto z-[110] md:z-auto bg-slate-50 md:bg-white p-4 md:p-8 md:rounded-3xl overflow-y-auto md:overflow-visible hidden shadow-xl md:shadow-sm md:border border-slate-200 mt-6 transition-all">
+                
+                <div class="flex justify-between items-center border-b border-slate-200 pb-5 mb-6 sticky top-0 bg-slate-50 md:bg-white z-20 md:static pt-2 md:pt-0">
+                    <h3 class="text-xl md:text-2xl font-black text-indigo-700">دەستکاریکردنی پڕۆژە</h3>
+                    <button onclick="closeProjectEditor()" class="bg-white md:bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-sm border border-slate-200 transition-colors shadow-sm md:shadow-none">گەڕانەوە <i class="fa-solid fa-arrow-left ml-1 text-xs"></i></button>
+                </div>
+                
+                <input type="hidden" id="editProjIndex">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="lg:col-span-2 space-y-4">
+                        <div><label class="text-xs font-bold text-slate-400 mb-1 block">ناوی پڕۆژە (کوردی)</label><input type="text" id="ep-t-ku" class="bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm w-full focus:ring-2 focus:ring-indigo-500 outline-none"></div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-400 mb-1 flex justify-between items-center"><span>Project Title (EN)</span><button onclick="autoTranslate('ep-t-ku', 'ep-t-en')" class="text-amber-500 hover:text-amber-600"><i class="fa-solid fa-wand-magic-sparkles"></i></button></label>
+                            <input type="text" id="ep-t-en" class="bg-slate-50 border border-slate-200 p-3 rounded-xl text-sm w-full focus:ring-2 focus:ring-indigo-500 outline-none" dir="ltr">
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col gap-4 shadow-inner">
+                        <div>
+                            <label class="text-xs font-bold text-slate-600 mb-1.5 block">جۆری کار</label>
+                            <select id="ep-c" class="border border-slate-300 p-2.5 rounded-lg w-full text-sm bg-white outline-none focus:border-indigo-500"></select>
+                            <input type="text" id="ep-new-c" class="border border-slate-300 p-2.5 rounded-lg mb-2 w-full text-sm mt-2 bg-white outline-none focus:border-indigo-500" placeholder="یان جۆرێکی نوێ بنووسە...">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-600 mb-1.5 block">بەروار</label>
+                            <input type="date" id="ep-date" class="border border-slate-300 p-2.5 rounded-lg w-full text-sm bg-white outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-indigo-600 mb-1.5 block">شێوازی پیشاندان</label>
+                            <select id="ep-disp" class="border-2 border-indigo-200 p-2.5 rounded-lg w-full font-bold text-indigo-700 text-sm bg-indigo-50/50 outline-none focus:border-indigo-500">
+                                <option value="video">١. ڤیدیۆ</option>
+                                <option value="website">٢. وێبسایت (Iframe)</option>
+                                <option value="image">٣. بانەری سەرەکی</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="space-y-4">
+                        <label class="text-sm font-bold text-slate-700 block border-b pb-2">وەشانی کوردی</label>
+                        <textarea id="ep-s-ku" class="border border-slate-200 p-3 rounded-xl h-20 bg-slate-50 text-sm w-full focus:ring-2 focus:ring-indigo-500 outline-none resize-none" placeholder="کورتەی پڕۆژە"></textarea>
+                        <div class="border border-slate-200 rounded-xl bg-white overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
+                            <div class="bg-slate-100 border-b border-slate-200 p-2 flex flex-wrap gap-1 items-center">
+                                <button onclick="execCmd('bold', this)" class="w-8 h-8 flex items-center justify-center font-bold text-slate-700 hover:bg-white rounded border border-transparent hover:border-slate-300">B</button>
+                                <button onclick="execCmd('italic', this)" class="w-8 h-8 flex items-center justify-center italic text-slate-700 hover:bg-white rounded border border-transparent hover:border-slate-300">I</button>
+                                <button onclick="execCmd('underline', this)" class="w-8 h-8 flex items-center justify-center underline text-slate-700 hover:bg-white rounded border border-transparent hover:border-slate-300">U</button>
+                                <span class="w-px h-5 bg-slate-300 mx-1"></span>
+                                <button onclick="execCmd('formatBlock', this, 'H2')" class="w-8 h-8 flex items-center justify-center font-bold text-slate-700 hover:bg-white rounded border border-transparent hover:border-slate-300">H2</button>
+                                <button onclick="execCmd('insertUnorderedList', this)" class="w-8 h-8 flex items-center justify-center text-slate-700 hover:bg-white rounded border border-transparent hover:border-slate-300"><i class="fa-solid fa-list-ul"></i></button>
+                                <span class="w-px h-5 bg-slate-300 mx-1"></span>
+                                <button onclick="addLink(this)" class="w-8 h-8 flex items-center justify-center text-indigo-600 hover:bg-white rounded border border-transparent hover:border-slate-300"><i class="fa-solid fa-link"></i></button>
+                            </div>
+                            <div id="ep-f-ku" class="rich-editor p-4 overflow-y-auto text-sm leading-loose" contenteditable="true" placeholder="وردەکاری تەواوەتی..."></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4" dir="ltr">
+                        <label class="text-sm font-bold text-slate-700 block border-b pb-2 flex justify-between items-center text-right"><span>English Version</span><button onclick="autoTranslate('ep-s-ku', 'ep-s-en')" class="text-amber-500 hover:text-amber-600 text-xs"><i class="fa-solid fa-wand-magic-sparkles"></i> Translate Desc</button></label>
+                        <textarea id="ep-s-en" class="border border-slate-200 p-3 rounded-xl h-20 bg-slate-50 text-sm w-full focus:ring-2 focus:ring-indigo-500 outline-none resize-none" placeholder="Short Description..."></textarea>
+                        
+                        <div class="border border-slate-200 rounded-xl bg-white overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 transition-all text-left">
+                            <div class="bg-slate-100 border-b border-slate-200 p-2 flex flex-wrap gap-1 items-center justify-between" dir="ltr">
+                                <div class="flex gap-1">
+                                    <button onclick="execCmd('bold', this)" class="w-8 h-8 flex items-center justify-center font-bold text-slate-700 hover:bg-white rounded border border-transparent hover:border-slate-300">B</button>
+                                    <button onclick="execCmd('italic', this)" class="w-8 h-8 flex items-center justify-center italic text-slate-700 hover:bg-white rounded border border-transparent hover:border-slate-300">I</button>
+                                    <button onclick="execCmd('underline', this)" class="w-8 h-8 flex items-center justify-center underline text-slate-700 hover:bg-white rounded border border-transparent hover:border-slate-300">U</button>
+                                    <span class="w-px h-5 bg-slate-300 mx-1"></span>
+                                    <button onclick="execCmd('formatBlock', this, 'H2')" class="w-8 h-8 flex items-center justify-center font-bold text-slate-700 hover:bg-white rounded border border-transparent hover:border-slate-300">H2</button>
+                                    <button onclick="execCmd('insertUnorderedList', this)" class="w-8 h-8 flex items-center justify-center text-slate-700 hover:bg-white rounded border border-transparent hover:border-slate-300"><i class="fa-solid fa-list-ul"></i></button>
+                                    <span class="w-px h-5 bg-slate-300 mx-1"></span>
+                                    <button onclick="addLink(this)" class="w-8 h-8 flex items-center justify-center text-indigo-600 hover:bg-white rounded border border-transparent hover:border-slate-300"><i class="fa-solid fa-link"></i></button>
+                                </div>
+                                <button onclick="autoTranslate('ep-f-ku', 'ep-f-en', true)" class="bg-amber-100 text-amber-700 hover:bg-amber-200 px-3 py-1 rounded text-xs font-bold transition-colors"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Auto Translate</button>
+                            </div>
+                            <div id="ep-f-en" class="rich-editor p-4 overflow-y-auto text-sm leading-loose" contenteditable="true" placeholder="Full Details..."></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 w-full mb-6 p-5 bg-slate-50 border border-slate-100 rounded-2xl">
+                    <div><label class="text-xs font-bold text-slate-500 mb-1 block"><i class="fa-brands fa-youtube text-red-500 mr-1"></i> لینکی ڤیدیۆی سەرەکی</label><input type="text" id="ep-v" class="bg-white border border-slate-200 p-3 rounded-xl w-full text-sm outline-none focus:border-indigo-500" dir="ltr" placeholder="https://youtube.com/..."></div>
+                    <div><label class="text-xs font-bold text-slate-500 mb-1 block"><i class="fa-solid fa-globe text-blue-500 mr-1"></i> لینکی وێبسایت</label><input type="url" id="ep-web" class="bg-white border border-slate-200 p-3 rounded-xl w-full text-sm outline-none focus:border-indigo-500" dir="ltr" placeholder="https://..."></div>
+                </div>
+
+                <div class="w-full mb-6 p-5 border border-slate-200 rounded-2xl bg-white shadow-sm">
+                    <div class="flex justify-between items-center mb-3">
+                        <label class="font-bold text-sm text-slate-800">لینکە زیادەکان (نموونە: ئەپ ستۆر، ڤیدیۆی دووەم)</label>
+                        <button type="button" onclick="addProjectExtraLink()" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">+ لینکی زیادە</button>
+                    </div>
+                    <div id="ep-extra-links" class="space-y-3"></div>
+                </div>
+
+                <div class="p-5 border border-slate-200 rounded-2xl bg-white w-full shadow-sm mb-6">
+                    <div class="flex justify-between items-end mb-3">
+                        <div>
+                            <label class="font-black text-slate-800 block text-lg">وێنەکانی پڕۆژە</label>
+                            <p class="text-xs text-slate-500">ڕێنمایی: کلیک لە ئەستێرەکە (⭐) بکە بۆ دیاریکردنی بانەری سەرەکی (١٦:٩).</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-3 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <input type="file" id="ep-img-input" accept="image/*" class="bg-white border border-slate-200 p-2 rounded-lg flex-1 text-sm outline-none focus:border-indigo-500">
+                        <div class="flex gap-2">
+                            <button onclick="uploadProjectImage()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"><i class="fa-solid fa-upload"></i> ئەپلۆد</button>
+                            <button onclick="openGallery('project')" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-6 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm"><i class="fa-solid fa-images text-indigo-500"></i> گەلەری</button>
+                        </div>
+                    </div>
+                    <div id="ep-img-list" class="flex flex-wrap gap-4 min-h-[100px] p-2"></div>
+                </div>
+                
+                <div class="mt-8 text-center md:text-left w-full border-t border-slate-200 pt-6 pb-20 md:pb-0">
+                    <button onclick="saveProjectEditor()" class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white px-10 py-4 rounded-xl font-black shadow-lg shadow-emerald-500/20 text-lg w-full md:w-auto transition-all"><i class="fa-solid fa-check-circle ml-2"></i> سەیڤکردنی پڕۆژە</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Extra Data & Settings -->
+        <div id="tab-extra" class="tab-content max-w-6xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-3xl md:text-4xl font-black text-amber-500 tracking-tight flex items-center gap-3"><i class="fa-solid fa-layer-group"></i> زانیارییە زیادەکان</h2>
+                <p class="text-slate-500 mt-2 font-medium leading-relaxed">لینک و تێکستی ئازاد بۆ سایتەکەت زیاد بکە.</p>
+            </div>
+            
+            <!-- کلیلەکانی وەرگێڕان -->
+            <div class="bg-amber-50 border border-amber-200 p-6 rounded-[2rem] mb-8">
+                <h3 class="font-bold text-amber-800 mb-2"><i class="fa-solid fa-robot mr-2"></i>ڕێکخستنی وەرگێڕانی ژیرانە (AI)</h3>
+                <p class="text-xs text-amber-700 mb-4">ئەگەر کۆدی <code>bytez-service.js</code> کار نەکات یان کێشەی هەبێت، دەتوانیت کلیلەکە لێرە نوێ بکەیتەوە.</p>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <input type="password" id="aiApiKey" class="border border-amber-300 p-3 rounded-xl flex-1 text-sm bg-white" placeholder="API Key بنووسە..." dir="ltr">
+                    <button onclick="saveAiKey()" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-sm transition-colors">سەیڤکردنی کلیل</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Custom Links -->
+                <div class="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                        <h3 class="text-xl font-black text-slate-800"><i class="fa-solid fa-link text-indigo-500 ml-2"></i>لینکە زیادەکان</h3>
+                        <button onclick="addCustomLinkUI()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-4 py-2 rounded-xl font-bold text-sm transition-colors">+ زیادکردن</button>
+                    </div>
+                    <div id="customLinksContainer" class="space-y-4 min-h-[100px]"></div>
+                </div>
+
+                <!-- Custom Texts -->
+                <div class="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                        <h3 class="text-xl font-black text-slate-800"><i class="fa-solid fa-align-left text-sky-500 ml-2"></i>تێکستە زیادەکان</h3>
+                        <button onclick="addCustomTextUI()" class="bg-sky-100 hover:bg-sky-200 text-sky-700 px-4 py-2 rounded-xl font-bold text-sm transition-colors">+ زیادکردن</button>
+                    </div>
+                    <div id="customTextsContainer" class="space-y-6 min-h-[100px]"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        let ghData = null; let fileSha = ''; let siteData = {};
+        let galleryCache = null; let currentGalleryTarget = ''; 
+
+        if (!localStorage.getItem('encrypted_gh')) { document.getElementById('firstTimeSetup').classList.remove('hidden'); }
+        document.getElementById('loginPass').addEventListener('keypress', function (e) { if (e.key === 'Enter') startLoginProcess(); });
+
+        function resetLogin() { localStorage.removeItem('encrypted_gh'); localStorage.removeItem('ai_api_key'); location.reload(); }
+        function showLoginError(msg) { const errBox = document.getElementById('loginError'); errBox.innerText = msg; errBox.classList.remove('hidden'); document.getElementById('btnLogin').innerHTML = "چوونەژوورەوە <i class='fa-solid fa-arrow-left mr-2'></i>"; }
+
+        // --- AI Translation Logic ---
+        function saveAiKey() {
+            const key = document.getElementById('aiApiKey').value.trim();
+            if(key) { localStorage.setItem('ai_api_key', key); showMsg('کلیلەکە سەیڤ کرا ✅'); }
+        }
+
+        async function autoTranslate(sourceId, targetId, isRichText = false) {
+            const sourceEl = document.getElementById(sourceId);
+            const targetEl = document.getElementById(targetId);
+            if(!sourceEl || !targetEl) return;
+
+            let sourceText = isRichText ? sourceEl.innerHTML : sourceEl.value;
+            if(!sourceText.trim()) return alert('سەرەتا بەشە کوردییەکە پڕبکەرەوە!');
+
+            const originalHtml = isRichText ? targetEl.innerHTML : targetEl.value;
+            if(isRichText) targetEl.innerHTML = "⏳ لە وەرگێڕاندایە...";
+            else targetEl.value = "⏳ لە وەرگێڕاندایە...";
+
+            try {
+                let apiKey = localStorage.getItem('ai_api_key');
+                // بەکارهێنانی env ئەگەر هەبوو
+                try { if(!apiKey && typeof process !== 'undefined' && process.env.MY_SECRET_API_KEY) apiKey = process.env.MY_SECRET_API_KEY; } catch(e){}
+
+                if(!apiKey) {
+                    apiKey = prompt("تکایە کلیلی API بۆ وەرگێڕانی ژیرانە (Gemini / Bytez) بنووسە:");
+                    if(!apiKey) throw new Error("No API Key");
+                    localStorage.setItem('ai_api_key', apiKey);
+                    document.getElementById('aiApiKey').value = apiKey;
+                }
+
+                const promptMsg = isRichText 
+                    ? `Translate the following Kurdish HTML content to English. Maintain all HTML tags exactly as they are. Return ONLY the raw translated HTML. Text:\n\n${sourceText}`
+                    : `Translate the following Kurdish text to English. Return ONLY the translation, without any extra text. Text:\n\n${sourceText}`;
+
+                // هەوڵدان بۆ خوێندنەوەی فایلی bytez-service یان ڕاستەوخۆ بەکارهێنانی فێچ
+                let translated = '';
+                try {
+                    const module = await import('./bytez-service.js');
+                    const result = await module.runAi(apiKey, promptMsg);
+                    translated = result.output.trim();
+                } catch(importErr) {
+                    // ئەگەر فایلەکە نەدۆزرایەوە، هەوڵدەدەین ڕاستەوخۆ API ی گێمنای بەکاربهێنین ئەگەر کلیلەکە گێمنای بێت
+                    console.log("bytez-service.js نەدۆزرایەوە، بەکارهێنانی ڕاستەوخۆی API...");
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: promptMsg }] }] })
+                    });
+                    if(!res.ok) throw new Error("API Request Failed");
+                    const data = await res.json();
+                    translated = data.candidates[0].content.parts[0].text.trim();
+                }
+
+                if(translated.startsWith('```html')) translated = translated.replace(/^```html\n?/, '').replace(/\n?```$/, '');
+                else if(translated.startsWith('```')) translated = translated.replace(/^```\n?/, '').replace(/\n?```$/, '');
+
+                if(isRichText) targetEl.innerHTML = translated;
+                else targetEl.value = translated;
+                showMsg('✨ وەرگێڕانەکە سەرکەوتوو بوو!');
+            } catch(e) {
+                console.error(e);
+                if(isRichText) targetEl.innerHTML = originalHtml; else targetEl.value = originalHtml;
+                if(e.message !== "No API Key") alert('وەرگێڕان شکستی هێنا. دڵنیابە کلیلەکەت ڕاستە.');
+            }
+        }
+
+        async function startLoginProcess() {
+            document.getElementById('loginError').classList.add('hidden');
+            const pass = document.getElementById('loginPass').value; const stored = localStorage.getItem('encrypted_gh');
+            if (!pass) return showLoginError('تکایە پاسوۆرد بنووسە!');
+            document.getElementById('btnLogin').innerText = "لە پەیوەندیکردندایە... ⏳";
+            
+            if (stored) {
+                try {
+                    const bytes = CryptoJS.AES.decrypt(stored, pass);
+                    const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
+                    if (!decryptedString) throw new Error("پاسوۆرد هەڵەیە");
+                    ghData = JSON.parse(decryptedString);
+                    if (!ghData || !ghData.token) throw new Error("داتای گیتهەب تێکچووە");
+                    await testAndFetchData();
+                } catch (e) { showLoginError('پاسوۆردەکەت هەڵەیە یان داتاکان کێشەیان هەیە.'); }
+            } else {
+                const u = document.getElementById('ghUser').value.trim(); const r = document.getElementById('ghRepo').value.trim(); const t = document.getElementById('ghToken').value.trim();
+                if(!u || !r || !t) return showLoginError('پێویستە هەموو بۆشاییەکانی سەرەوە پڕبکەیتەوە!');
+                ghData = { user: u, repo: r, token: t };
+                await testAndFetchData(pass); 
+            }
+        }
+
+        async function testAndFetchData(passToSave = null) {
+            try {
+                const res = await fetch(`https://api.github.com/repos/${ghData.user}/${ghData.repo}/contents/data.json?t=${Date.now()}`, { headers: { 'Authorization': `token ${ghData.token}` } });
+                if (res.ok) {
+                    const data = await res.json(); fileSha = data.sha;
+                    try { siteData = JSON.parse(decodeURIComponent(escape(atob(data.content)))); } catch (jsonErr) { return showLoginError('فایلی data.json لە گیتهەب کێشەی هەیە.'); }
+                    if (passToSave) { localStorage.setItem('encrypted_gh', CryptoJS.AES.encrypt(JSON.stringify(ghData), passToSave).toString()); }
+                    
+                    if(!siteData.categories) siteData.categories = ["وێب دیزاین", "مۆنتاژی ڤیدیۆ", "گرافیک دیزاین"];
+                    if(!siteData.sections.businesses) siteData.sections.businesses = [];
+                    if(!siteData.sections.contact.socials) siteData.sections.contact.socials = {facebook:"", behance:"", instagram:"", youtube:""};
+                    if(!siteData.custom) siteData.custom = { links: [], texts: [] };
+                    
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    populateForms(); 
+                    showMsg('✅ چوونەژوورەوە سەرکەوتوو بوو!');
+                } else if (res.status === 401) { showLoginError('تۆکنەکەی گیتهەب هەڵەیە.'); } else if (res.status === 404) { showLoginError(`ڕیپۆزیتۆرییەکە یان ناوی ئەکاونتەکە هەڵەیە.`); } else { showLoginError('هەڵەیەک هەیە لە پەیوەندی کردن بە گیتهەبەوە.'); }
+            } catch(e) { showLoginError('کێشە هەیە لە هێڵی ئینتەرنێتەکەت.'); }
+        }
+
+        function getFullImageUrl(url) {
+            if (!url) return '';
+            if (url.startsWith('http')) {
+                if(url.includes('github.com') && url.includes('/blob/')) { return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/'); }
+                return url;
+            }
+            return `https://raw.githubusercontent.com/${ghData.user}/${ghData.repo}/main/${url}`;
+        }
+
+        function switchTab(tabId) { 
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); 
+            document.getElementById('tab-' + tabId).classList.add('active'); 
+            
+            document.querySelectorAll('#sidebarNavDesktop button').forEach(b => { 
+                b.classList.remove('bg-indigo-600', 'text-white'); 
+                b.classList.add('hover:bg-slate-800', 'hover:text-white', 'text-slate-300'); 
+            }); 
+            
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            const deskBtn = document.querySelector(`#sidebarNavDesktop button[onclick="switchTab('${tabId}')"]`);
+            if(deskBtn) {
+                deskBtn.classList.remove('hover:bg-slate-800', 'hover:text-white', 'text-slate-300'); 
+                if(tabId === 'extra') deskBtn.classList.add('bg-slate-800', 'text-amber-400');
+                else deskBtn.classList.add('bg-indigo-600', 'text-white');
+            }
+            const mobBtn = document.querySelector(`.nav-btn[data-target="${tabId}"]`);
+            if(mobBtn) mobBtn.classList.add('active');
+        }
+        
+        function showMsg(text) { const m = document.getElementById('statusMsg'); m.innerHTML = text; m.classList.remove('hidden'); m.classList.add('translate-y-4'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('translate-y-4'); }, 3000); }
+        function updateImagePos() { const x = document.getElementById('heroPosX').value; const y = document.getElementById('heroPosY').value; document.getElementById('profilePreview').style.objectPosition = `${x}% ${y}%`; }
+
+        // --- Helper function to create extra link UI with Translation ---
+        function createExtraLinkHTML(ku='', en='', url='') {
+            const uid = Date.now() + Math.random().toString(36).substr(2, 5);
+            const div = document.createElement('div');
+            div.className = "flex flex-wrap md:flex-nowrap gap-2 items-start extra-link-item bg-white p-3 rounded-xl border border-slate-200 w-full relative";
+            div.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-red-500 hover:bg-red-50 w-6 h-6 rounded flex items-center justify-center transition-colors z-10"><i class="fa-solid fa-xmark"></i></button>
+                <div class="flex-1 w-full grid grid-cols-1 gap-2 pt-6 md:pt-0 pr-8 md:pr-0">
+                    <input type="text" id="cl-ku-${uid}" class="el-ku text-xs p-2 rounded-lg border border-slate-200 outline-none focus:border-indigo-500 w-full" placeholder="ناوی لینک (کوردی)" value="${ku}">
+                    <div class="flex items-center gap-1">
+                        <button type="button" onclick="autoTranslate('cl-ku-${uid}', 'cl-en-${uid}')" class="text-amber-500 hover:text-amber-600 px-2 py-1 bg-amber-50 rounded-lg text-xs" title="وەرگێڕان"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                        <input type="text" id="cl-en-${uid}" class="el-en text-xs p-2 rounded-lg border border-slate-200 outline-none focus:border-indigo-500 w-full" dir="ltr" placeholder="Name (EN)" value="${en}">
+                    </div>
+                    <input type="url" class="el-u text-xs p-2 rounded-lg border border-slate-200 outline-none focus:border-indigo-500 w-full mt-1" dir="ltr" placeholder="https://..." value="${url}">
+                </div>
+            `;
+            return div;
+        }
+
+        function populateForms() {
+            const s = siteData.sections;
+            const aiKey = localStorage.getItem('ai_api_key');
+            if(aiKey) document.getElementById('aiApiKey').value = aiKey;
+
+            document.getElementById('profilePreview').src = getFullImageUrl(s.hero.image);
+            if(s.hero.imagePos) { document.getElementById('heroPosX').value = s.hero.imagePos.x || 50; document.getElementById('heroPosY').value = s.hero.imagePos.y || 50; updateImagePos(); }
+            document.getElementById('navLogoPreview').src = getFullImageUrl(s.hero.navLogo);
+            
+            document.getElementById('h-name-ku').value = s.hero.name?.ku||''; document.getElementById('h-name-en').value = s.hero.name?.en||'';
+            document.getElementById('h-title-ku').value = s.hero.title?.ku||''; document.getElementById('h-title-en').value = s.hero.title?.en||'';
+            document.getElementById('a-desc-ku').value = s.about.desc?.ku||''; document.getElementById('a-desc-en').value = s.about.desc?.en||'';
+            
+            document.getElementById('businessContainer').innerHTML = ''; 
+            if(s.businesses) s.businesses.forEach((b, i) => buildBusiness(b, i));
+
+            document.getElementById('cvContainer').innerHTML = ''; if(s.cv.items) s.cv.items.forEach(c => buildCv(c));
+            document.getElementById('skillsContainer').innerHTML = ''; if(s.skills.list) s.skills.list.forEach(sk => buildSkill(sk));
+            document.getElementById('clientsContainer').innerHTML = ''; if(s.clients.logos) s.clients.logos.forEach((url) => buildClientLogo(url));
+
+            if(s.contact) { 
+                document.getElementById('c-email').value = s.contact.email||''; document.getElementById('c-phone').value = s.contact.phone||''; 
+                document.getElementById('c-addr-ku').value = s.contact.address?.ku||''; document.getElementById('c-addr-en').value = s.contact.address?.en||''; 
+                document.getElementById('c-form-key').value = s.contact.formKey||''; 
+                document.getElementById('s-fb').value = s.contact.socials?.facebook || ''; document.getElementById('s-ig').value = s.contact.socials?.instagram || '';
+                document.getElementById('s-yt').value = s.contact.socials?.youtube || ''; document.getElementById('s-be').value = s.contact.socials?.behance || '';
+                
+                document.getElementById('contactExtraLinks').innerHTML = '';
+                if(s.contact.extraLinks) s.contact.extraLinks.forEach(l => addContactExtraLink(l.title?.ku, l.title?.en, l.url));
+            }
+            renderProjectsGrid();
+            
+            document.getElementById('customLinksContainer').innerHTML = '';
+            if(siteData.custom && siteData.custom.links) siteData.custom.links.forEach(l => buildCustomLink(l));
+            document.getElementById('customTextsContainer').innerHTML = '';
+            if(siteData.custom && siteData.custom.texts) siteData.custom.texts.forEach(t => buildCustomText(t));
+        }
+
+        // --- Businesses ---
+        function buildBusiness(b, index) {
+            const uid = Date.now() + Math.random().toString(36).substr(2, 5);
+            const div = document.createElement('div'); div.className = "b-item bg-slate-50 p-5 rounded-2xl border border-slate-200 relative mb-4";
+            div.innerHTML = `
+                <button onclick="this.parentElement.remove()" class="absolute top-3 left-3 text-red-500 hover:text-white hover:bg-red-500 w-8 h-8 rounded-lg flex items-center justify-center transition-colors"><i class="fa-solid fa-trash"></i></button>
+                <div class="flex gap-4 items-center mb-5 mt-2">
+                    <img src="${getFullImageUrl(b.logo)}" class="b-logo-img w-16 h-16 rounded-xl bg-white border border-slate-200 object-cover shadow-sm">
+                    <div class="flex gap-2"><input type="hidden" class="b-logo-val" value="${b.logo||''}"><button onclick="currentGalleryTarget='bLogo_${index}'; openGallery('bLogo_${index}')" class="bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors">گۆڕینی لۆگۆ <i class="fa-solid fa-image ml-1"></i></button></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div><label class="text-[10px] font-bold text-slate-400 mb-1 block">ناوی بزنس (کوردی)</label><input type="text" id="b-t-ku-${uid}" class="b-t-ku w-full border border-slate-200 p-2.5 rounded-xl text-sm outline-none focus:border-indigo-500" value="${b.heading?.ku||''}"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 mb-1 flex justify-between"><span>Name (EN)</span><button onclick="autoTranslate('b-t-ku-${uid}', 'b-t-en-${uid}')" class="text-amber-500 hover:text-amber-600"><i class="fa-solid fa-wand-magic-sparkles"></i></button></label><input type="text" id="b-t-en-${uid}" class="b-t-en w-full border border-slate-200 p-2.5 rounded-xl text-sm outline-none focus:border-indigo-500" dir="ltr" value="${b.heading?.en||''}"></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 mb-1 block">دەربارە (کوردی)</label><textarea id="b-d-ku-${uid}" class="b-d-ku w-full border border-slate-200 p-3 rounded-xl h-20 text-sm outline-none focus:border-indigo-500 resize-none">${b.desc?.ku||''}</textarea></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 mb-1 flex justify-between"><span>About (EN)</span><button onclick="autoTranslate('b-d-ku-${uid}', 'b-d-en-${uid}')" class="text-amber-500 hover:text-amber-600"><i class="fa-solid fa-wand-magic-sparkles"></i></button></label><textarea id="b-d-en-${uid}" class="b-d-en w-full border border-slate-200 p-3 rounded-xl h-20 text-sm outline-none focus:border-indigo-500 resize-none" dir="ltr">${b.desc?.en||''}</textarea></div>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 bg-white p-3 rounded-xl border border-slate-100">
+                    <div class="flex items-center gap-2"><i class="fa-solid fa-globe text-slate-400"></i><input type="url" class="b-w w-full border-0 p-1 text-xs outline-none bg-transparent" dir="ltr" placeholder="Website" value="${b.socials?.website||''}"></div>
+                    <div class="flex items-center gap-2"><i class="fa-brands fa-facebook text-blue-500"></i><input type="url" class="b-fb w-full border-0 p-1 text-xs outline-none bg-transparent" dir="ltr" placeholder="Facebook" value="${b.socials?.facebook||''}"></div>
+                    <div class="flex items-center gap-2"><i class="fa-brands fa-instagram text-pink-500"></i><input type="url" class="b-ig w-full border-0 p-1 text-xs outline-none bg-transparent" dir="ltr" placeholder="Instagram" value="${b.socials?.instagram||''}"></div>
+                    <div class="flex items-center gap-2"><i class="fa-brands fa-youtube text-red-500"></i><input type="url" class="b-yt w-full border-0 p-1 text-xs outline-none bg-transparent" dir="ltr" placeholder="Youtube" value="${b.socials?.youtube||''}"></div>
+                </div>
+                <div class="mt-4 border-t border-slate-200 pt-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-slate-500">لینکە زیادەکان (وەک ئەپ ستۆر، پەڕەی تر)</span>
+                        <button type="button" onclick="addBusinessExtraLink(this)" class="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md font-bold">+ لینک</button>
+                    </div>
+                    <div class="b-extra-links space-y-2"></div>
+                </div>
+            `;
+            div.dataset.bindex = index;
+            document.getElementById('businessContainer').appendChild(div);
+            if(b.extraLinks) b.extraLinks.forEach(l => div.querySelector('.b-extra-links').appendChild(createExtraLinkHTML(l.title?.ku, l.title?.en, l.url)));
+        }
+        function addBusinessUI() { const idx = document.querySelectorAll('.b-item').length; buildBusiness({heading:{},desc:{},socials:{}, extraLinks:[]}, idx); }
+        function addBusinessExtraLink(btn) { btn.parentElement.nextElementSibling.appendChild(createExtraLinkHTML()); }
+        function addContactExtraLink(ku='', en='', url='') { document.getElementById('contactExtraLinks').appendChild(createExtraLinkHTML(ku, en, url)); }
+
+        // --- CV, Skills, Clients ---
+        function buildCv(c) {
+            const uid = Date.now() + Math.random().toString(36).substr(2, 5);
+            const div = document.createElement('div'); div.className = "cv-item bg-white p-5 rounded-2xl border border-slate-200 relative";
+            div.innerHTML = `
+                <button onclick="this.parentElement.remove()" class="absolute top-3 left-3 text-red-500 hover:bg-red-50 w-7 h-7 rounded flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                    <div class="flex gap-2"><input type="text" id="cv-r-ku-${uid}" class="cv-r-ku border border-slate-200 p-2.5 rounded-xl text-sm w-full outline-none focus:border-indigo-500 bg-slate-50" placeholder="ڕۆڵ (کوردی)" value="${c.role?.ku||''}"><button onclick="autoTranslate('cv-r-ku-${uid}','cv-r-en-${uid}')" class="text-amber-500 px-2"><i class="fa-solid fa-wand-magic-sparkles"></i></button><input type="text" id="cv-r-en-${uid}" class="cv-r-en border border-slate-200 p-2.5 rounded-xl text-sm w-full outline-none focus:border-indigo-500 bg-slate-50" dir="ltr" placeholder="Role (EN)" value="${c.role?.en||''}"></div>
+                    <div class="flex gap-2"><input type="text" id="cv-p-ku-${uid}" class="cv-p-ku border border-slate-200 p-2.5 rounded-xl text-sm w-full outline-none focus:border-indigo-500" placeholder="شوێن (کوردی)" value="${c.place?.ku||''}"><button onclick="autoTranslate('cv-p-ku-${uid}','cv-p-en-${uid}')" class="text-amber-500 px-2"><i class="fa-solid fa-wand-magic-sparkles"></i></button><input type="text" id="cv-p-en-${uid}" class="cv-p-en border border-slate-200 p-2.5 rounded-xl text-sm w-full outline-none focus:border-indigo-500" dir="ltr" placeholder="Place (EN)" value="${c.place?.en||''}"></div>
+                    <input type="text" class="cv-y border border-slate-200 p-2.5 rounded-xl text-sm w-full md:col-span-2 outline-none focus:border-indigo-500 font-bold" dir="ltr" placeholder="ساڵ (e.g. 2020 - 2024)" value="${c.year||''}">
+                    <textarea id="cv-d-ku-${uid}" class="cv-d-ku border border-slate-200 p-3 rounded-xl h-16 text-sm w-full outline-none focus:border-indigo-500 resize-none bg-slate-50" placeholder="کورتە (کوردی)">${c.desc?.ku||''}</textarea>
+                    <div class="relative w-full"><button onclick="autoTranslate('cv-d-ku-${uid}','cv-d-en-${uid}')" class="absolute left-2 top-2 text-amber-500"><i class="fa-solid fa-wand-magic-sparkles"></i></button><textarea id="cv-d-en-${uid}" class="cv-d-en border border-slate-200 p-3 rounded-xl h-16 text-sm w-full outline-none focus:border-indigo-500 resize-none bg-slate-50" dir="ltr" placeholder="Desc (EN)">${c.desc?.en||''}</textarea></div>
+                </div>`;
+            document.getElementById('cvContainer').appendChild(div);
+        }
+        function addCvUI() { buildCv({role:{},place:{},desc:{},year:""}); }
+
+        function buildSkill(sk) {
+            const uid = Date.now() + Math.random().toString(36).substr(2, 5);
+            const div = document.createElement('div'); div.className = "skill-item flex flex-wrap gap-2 bg-white p-3 rounded-xl border border-slate-200 items-center shadow-sm w-full";
+            div.innerHTML = `
+                <input type="text" id="sk-n-ku-${uid}" class="sk-n-ku border-0 bg-slate-50 p-2 rounded-lg flex-1 text-sm min-w-[100px] outline-none focus:ring-1 focus:ring-indigo-500" placeholder="ناو (کوردی)" value="${sk.name?.ku||''}">
+                <button onclick="autoTranslate('sk-n-ku-${uid}','sk-n-en-${uid}')" class="text-amber-500"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                <input type="text" id="sk-n-en-${uid}" class="sk-n-en border-0 bg-slate-50 p-2 rounded-lg flex-1 text-sm min-w-[100px] outline-none focus:ring-1 focus:ring-indigo-500" dir="ltr" placeholder="Name (EN)" value="${sk.name?.en||''}">
+                <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-lg pr-2"><input type="number" class="sk-p border-0 bg-transparent w-12 text-center text-sm font-bold outline-none" placeholder="0" value="${sk.percent||''}"><span class="text-xs text-slate-400 font-bold">%</span></div>
+                <button onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600 px-2 transition-colors"><i class="fa-solid fa-trash"></i></button>`;
+            document.getElementById('skillsContainer').appendChild(div);
+        }
+        function addSkillUI() { buildSkill({name:{}, percent:""}); }
+
+        function buildClientLogo(url) {
+            const div = document.createElement('div'); div.className = "client-logo relative group w-20 h-20 bg-white rounded-2xl shadow-sm border border-slate-200 p-3 flex items-center justify-center cursor-pointer hover:border-indigo-400 transition-colors";
+            div.innerHTML = `<img src="${getFullImageUrl(url)}" class="max-w-full max-h-full object-contain"><div onclick="this.parentElement.remove()" class="absolute inset-0 bg-red-500/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 rounded-2xl font-bold transition-all text-sm backdrop-blur-sm"><i class="fa-solid fa-trash"></i></div><input type="hidden" class="c-url" value="${url}">`;
+            document.getElementById('clientsContainer').appendChild(div);
+        }
+
+        // --- Custom Dynamic Data Forms ---
+        function buildCustomLink(l) {
+            const uid = Date.now() + Math.random().toString(36).substr(2, 5);
+            const div = document.createElement('div'); div.className = "cl-item bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-3 items-center relative";
+            div.innerHTML = `
+                <div class="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <input type="text" id="cl-ku-${uid}" class="cl-t-ku border border-slate-200 p-2 rounded-lg text-sm outline-none focus:border-indigo-500" placeholder="ناوی لینک (کوردی)" value="${l.title?.ku||''}">
+                    <div class="flex items-center gap-1">
+                        <button onclick="autoTranslate('cl-ku-${uid}', 'cl-en-${uid}')" class="text-amber-500"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                        <input type="text" id="cl-en-${uid}" class="cl-t-en w-full border border-slate-200 p-2 rounded-lg text-sm outline-none focus:border-indigo-500" dir="ltr" placeholder="Link Name (EN)" value="${l.title?.en||''}">
+                    </div>
+                </div>
+                <input type="url" class="cl-u flex-1 w-full border border-slate-200 p-2 rounded-lg text-sm outline-none focus:border-indigo-500" dir="ltr" placeholder="https://..." value="${l.url||''}">
+                <button onclick="this.parentElement.remove()" class="bg-red-100 text-red-600 hover:bg-red-500 hover:text-white w-full md:w-10 h-10 rounded-lg flex items-center justify-center transition-colors shrink-0"><i class="fa-solid fa-trash"></i></button>
+            `;
+            document.getElementById('customLinksContainer').appendChild(div);
+        }
+        function addCustomLinkUI() { buildCustomLink({title:{}, url:""}); }
+
+        function buildCustomText(t) {
+            const uid = Date.now() + Math.random().toString(36).substr(2, 5);
+            const div = document.createElement('div'); div.className = "ct-item bg-slate-50 p-5 rounded-2xl border border-slate-200 relative";
+            div.innerHTML = `
+                <button onclick="this.parentElement.remove()" class="absolute top-3 left-3 text-red-500 hover:text-white hover:bg-red-500 w-8 h-8 rounded-lg flex items-center justify-center transition-colors"><i class="fa-solid fa-trash"></i></button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 mt-2">
+                    <input type="text" id="ct-t-ku-${uid}" class="ct-t-ku border border-slate-200 p-2.5 rounded-xl text-sm font-bold outline-none focus:border-sky-500" placeholder="سەردێڕ (کوردی)" value="${t.title?.ku||''}">
+                    <div class="flex items-center gap-1">
+                        <button onclick="autoTranslate('ct-t-ku-${uid}','ct-t-en-${uid}')" class="text-amber-500"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                        <input type="text" id="ct-t-en-${uid}" class="ct-t-en border border-slate-200 p-2.5 rounded-xl text-sm font-bold outline-none focus:border-sky-500 w-full" dir="ltr" placeholder="Title (EN)" value="${t.title?.en||''}">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <textarea id="ct-c-ku-${uid}" class="ct-c-ku border border-slate-200 p-3 rounded-xl h-24 text-sm outline-none focus:border-sky-500 resize-none" placeholder="دەق / ناوەڕۆک (کوردی)">${t.content?.ku||''}</textarea>
+                    <div class="relative w-full">
+                        <button onclick="autoTranslate('ct-c-ku-${uid}','ct-c-en-${uid}')" class="absolute left-2 top-2 text-amber-500"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                        <textarea id="ct-c-en-${uid}" class="ct-c-en border border-slate-200 p-3 rounded-xl h-24 text-sm outline-none focus:border-sky-500 resize-none w-full" dir="ltr" placeholder="Content (EN)">${t.content?.en||''}</textarea>
+                    </div>
+                </div>
+            `;
+            document.getElementById('customTextsContainer').appendChild(div);
+        }
+        function addCustomTextUI() { buildCustomText({title:{}, content:{}}); }
+
+        // --- Projects ---
+        function renderProjectsGrid() {
+            const grid = document.getElementById('projectsGrid');
+            if(!siteData.projects) siteData.projects = [];
+            grid.innerHTML = siteData.projects.map((pr, i) => `
+                <div class="bg-white border border-slate-200 rounded-[1.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all relative group w-full flex flex-col h-full">
+                    <div class="w-full h-48 overflow-hidden bg-slate-100 relative">
+                        <img src="${pr.bannerImage ? getFullImageUrl(pr.bannerImage) : (pr.images && pr.images[0] ? getFullImageUrl(pr.images[0]) : 'https://via.placeholder.com/300x200?text=No+Image')}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                        ${pr.category ? `<div class="absolute top-3 right-3 bg-white/90 backdrop-blur text-indigo-700 text-[10px] font-black px-2 py-1 rounded-md">${pr.category}</div>` : ''}
+                    </div>
+                    <div class="p-5 flex flex-col flex-1">
+                        <h4 class="font-black text-slate-800 text-lg mb-2 truncate">${pr.title?.ku || 'پڕۆژەی نوێ'}</h4>
+                        <div class="mt-auto flex gap-2">
+                            <button onclick="openProjectEditor(${i})" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 flex-1 py-2 rounded-xl font-bold text-xs transition-colors"><i class="fa-solid fa-pen ml-1"></i> دەستکاری</button>
+                            <button onclick="deleteProject(${i})" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-xl font-bold text-xs transition-colors"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('projectsGrid').classList.remove('hidden'); document.getElementById('projectEditorModal').classList.add('hidden');
+        }
+
+        function deleteProject(index) { if(confirm('دڵنیایت لە سڕینەوەی ئەم پڕۆژەیە؟')) { siteData.projects.splice(index, 1); renderProjectsGrid(); } }
+        function addNewProject() { siteData.projects.unshift({title:{ku:"",en:""}, category:"", shortDesc:{ku:"",en:""}, fullDesc:{ku:"",en:""}, images:[], videoLink:"", date:"", websiteLink:"", displayType: "video", bannerImage: "", extraLinks:[]}); openProjectEditor(0); }
+
+        function openProjectEditor(index) {
+            document.getElementById('projectsGrid').classList.add('hidden');
+            const modal = document.getElementById('projectEditorModal'); modal.classList.remove('hidden');
+            const pr = siteData.projects[index]; document.getElementById('editProjIndex').value = index;
+
+            let catOptions = siteData.categories.map(c => `<option value="${c}" ${pr.category===c?'selected':''}>${c}</option>`).join('');
+            if(!siteData.categories.includes(pr.category) && pr.category) catOptions += `<option value="${pr.category}" selected>${pr.category}</option>`;
+            document.getElementById('ep-c').innerHTML = catOptions; document.getElementById('ep-new-c').value = ''; 
+            
+            document.getElementById('ep-disp').value = pr.displayType || 'video';
+            document.getElementById('ep-t-ku').value = pr.title?.ku||''; document.getElementById('ep-t-en').value = pr.title?.en||'';
+            document.getElementById('ep-date').value = pr.date||'';
+            document.getElementById('ep-s-ku').value = pr.shortDesc?.ku||''; document.getElementById('ep-s-en').value = pr.shortDesc?.en||'';
+            document.getElementById('ep-f-ku').innerHTML = pr.fullDesc?.ku||''; document.getElementById('ep-f-en').innerHTML = pr.fullDesc?.en||'';
+            document.getElementById('ep-v').value = pr.videoLink||''; document.getElementById('ep-web').value = pr.websiteLink||'';
+            renderEditorImages(pr.images || [], pr.bannerImage || '');
+            
+            document.getElementById('ep-extra-links').innerHTML = '';
+            if(pr.extraLinks) { pr.extraLinks.forEach(l => addProjectExtraLink(l.title?.ku, l.title?.en, l.url)); }
+        }
+
+        function addProjectExtraLink(ku='', en='', url='') { document.getElementById('ep-extra-links').appendChild(createExtraLinkHTML(ku, en, url)); }
+
+        function renderEditorImages(imgs, currentBanner) {
+            document.getElementById('ep-img-list').innerHTML = imgs.map((img, i) => `
+                <div class="relative w-24 h-24 md:w-28 md:h-28 border-[3px] rounded-xl overflow-hidden shadow-sm ${img === currentBanner ? 'border-amber-400' : 'border-slate-200'}">
+                    <img src="${getFullImageUrl(img)}" class="w-full h-full object-cover">
+                    <button onclick="removeEditorImage(${i})" class="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full text-xs shadow"><i class="fa-solid fa-xmark"></i></button>
+                    <button onclick="setBannerImage('${img}')" class="absolute top-1 left-1 bg-white text-slate-800 w-6 h-6 rounded-full text-xs shadow flex items-center justify-center hover:text-amber-500" title="بیکە بە بانەر"><i class="fa-solid fa-star ${img === currentBanner ? 'text-amber-500' : ''}"></i></button>
+                    <input type="hidden" class="ep-img-val" value="${img}">
+                    ${img === currentBanner ? '<span class="absolute bottom-0 inset-x-0 bg-amber-400 text-slate-900 text-[10px] py-0.5 text-center font-black uppercase tracking-widest">بانەر</span>' : ''}
+                </div>
+            `).join('');
+        }
+
+        function removeEditorImage(index) { const idx = document.getElementById('editProjIndex').value; siteData.projects[idx].images.splice(index, 1); renderEditorImages(siteData.projects[idx].images, siteData.projects[idx].bannerImage); }
+        function setBannerImage(imgUrl) { const idx = document.getElementById('editProjIndex').value; siteData.projects[idx].bannerImage = imgUrl; renderEditorImages(siteData.projects[idx].images, imgUrl); showMsg('وێنەکە کرا بە بانەری سەرەکی 🌟'); }
+        function closeProjectEditor() { renderProjectsGrid(); }
+
+        function saveProjectEditor() {
+            const idx = document.getElementById('editProjIndex').value; const pr = siteData.projects[idx];
+            pr.title.ku = document.getElementById('ep-t-ku').value; pr.title.en = document.getElementById('ep-t-en').value;
+            pr.displayType = document.getElementById('ep-disp').value;
+            const newCat = document.getElementById('ep-new-c').value.trim();
+            if(newCat) { pr.category = newCat; if(!siteData.categories.includes(newCat)) siteData.categories.push(newCat); } 
+            else { pr.category = document.getElementById('ep-c').value; }
+            pr.date = document.getElementById('ep-date').value;
+            pr.shortDesc.ku = document.getElementById('ep-s-ku').value; pr.shortDesc.en = document.getElementById('ep-s-en').value;
+            pr.fullDesc.ku = document.getElementById('ep-f-ku').innerHTML; pr.fullDesc.en = document.getElementById('ep-f-en').innerHTML;
+            pr.videoLink = document.getElementById('ep-v').value; pr.websiteLink = document.getElementById('ep-web').value;
+            pr.images = []; document.querySelectorAll('.ep-img-val').forEach(el => pr.images.push(el.value));
+            
+            pr.extraLinks = [];
+            document.querySelectorAll('#ep-extra-links .extra-link-item').forEach(el => {
+                const ku = el.querySelector('.el-ku').value.trim(); const en = el.querySelector('.el-en').value.trim(); const u = el.querySelector('.el-u').value.trim();
+                if(ku || en || u) pr.extraLinks.push({title: {ku, en}, url: u});
+            });
+
+            showMsg('پڕۆژەکە بە کاتی هەڵگیرا. بۆ بڵاوکردنەوە کلیک لە سەوزەکە بکە ✔️'); closeProjectEditor();
+        }
+
+        // Advanced Rich Text
+        function execCmd(command, button, value=null) { document.execCommand(command, false, value); button.parentElement.parentElement.nextElementSibling.focus(); }
+        function addLink(button) { const url = prompt('لینکەکە دابنێ (http://...):'); if(url) execCmd('createLink', button, url); }
+
+        // --- Gallery & Upload ---
+        async function coreUpload(file, btn) {
+            const ogText = btn.innerHTML;
+            btn.innerHTML = "<i class='fa-solid fa-circle-notch fa-spin'></i>"; btn.disabled = true;
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = async function() {
+                    const b64 = reader.result.split(',')[1]; const name = Date.now() + '-' + file.name.replace(/[^a-zA-Z0-9.]/g, '');
+                    try {
+                        const res = await fetch(`https://api.github.com/repos/${ghData.user}/${ghData.repo}/contents/images/${name}`, {
+                            method: 'PUT', headers: { 'Authorization': `token ${ghData.token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: 'Upload via Dashboard', content: b64 })
+                        });
+                        if(res.ok) { const dat = await res.json(); if(galleryCache) galleryCache.push(dat.content); resolve(dat.content.path); } else reject("Upload failed");
+                    } catch(e) { reject(e); }
+                    btn.innerHTML = ogText; btn.disabled = false;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function openGallery(target) {
+            currentGalleryTarget = target;
+            const modal = document.getElementById('galleryModal'); const grid = document.getElementById('galleryGrid');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            
+            if(!galleryCache) {
+                grid.innerHTML = '<div class="col-span-full text-center py-20 font-bold text-slate-500"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500 mb-4 block"></i>لە هێنانی وێنەکاندایە لە گیتهەب...</div>';
+                try {
+                    const res = await fetch(`https://api.github.com/repos/${ghData.user}/${ghData.repo}/contents/images`, { headers: { 'Authorization': `token ${ghData.token}` } });
+                    if(res.ok) { galleryCache = await res.json(); galleryCache = galleryCache.filter(f => f.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)); renderGalleryImages(); } 
+                    else { grid.innerHTML = '<div class="col-span-full text-center py-20 font-bold text-red-500"><i class="fa-solid fa-triangle-exclamation text-4xl mb-4 block"></i>هەڵە لە هێنانی گەلەری. فۆڵدەری images بەتاڵە!</div>'; }
+                } catch(e) { grid.innerHTML = '<div class="col-span-full text-center py-20 font-bold text-red-500">کێشەی هێڵ!</div>'; }
+            } else { renderGalleryImages(); }
+        }
+
+        function renderGalleryImages() {
+            const grid = document.getElementById('galleryGrid');
+            if(galleryCache.length === 0) { grid.innerHTML = '<div class="col-span-full text-center py-20 font-bold text-slate-500">هیچ وێنەیەک نییە!</div>'; return; }
+            grid.innerHTML = galleryCache.map(file => `
+                <div onclick="selectFromGallery('${file.path}')" class="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-indigo-500 hover:shadow-md transition-all group overflow-hidden relative h-24 md:h-32">
+                    <img src="${getFullImageUrl(file.path)}" class="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-110">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2"><span class="text-white text-[10px] font-bold truncate px-2 w-full text-center" dir="ltr">${file.name}</span></div>
+                </div>
+            `).join('');
+        }
+
+        function closeGallery() { document.getElementById('galleryModal').classList.add('hidden'); document.getElementById('galleryModal').classList.remove('flex'); }
+
+        function selectFromGallery(path) {
+            if(currentGalleryTarget === 'hero') { document.getElementById('profilePreview').src = getFullImageUrl(path); siteData.sections.hero.image = path; }
+            else if(currentGalleryTarget === 'navLogo') { document.getElementById('navLogoPreview').src = getFullImageUrl(path); siteData.sections.hero.navLogo = path; }
+            else if(currentGalleryTarget.startsWith('bLogo_')) { const idx = currentGalleryTarget.split('_')[1]; document.querySelectorAll('.b-item')[idx].querySelector('.b-logo-img').src = getFullImageUrl(path); document.querySelectorAll('.b-item')[idx].querySelector('.b-logo-val').value = path; }
+            else if(currentGalleryTarget === 'client') { buildClientLogo(path); }
+            else if(currentGalleryTarget === 'project') { const idx = document.getElementById('editProjIndex').value; siteData.projects[idx].images.push(path); if(!siteData.projects[idx].bannerImage) siteData.projects[idx].bannerImage = path; renderEditorImages(siteData.projects[idx].images, siteData.projects[idx].bannerImage); }
+            closeGallery(); showMsg('وێنەکە هەڵبژێردرا 🖼️');
+        }
+
+        async function uploadProfileImage() { const input = document.getElementById('heroImageInput'); const btn = input.nextElementSibling.querySelector('button') || input.nextElementSibling; if(!input.files.length) return alert('وێنە هەڵبژێرە!'); try { const path = await coreUpload(input.files[0], btn); document.getElementById('profilePreview').src = getFullImageUrl(path); siteData.sections.hero.image = path; showMsg('سەرکەوت!'); input.value=''; } catch(e) { alert(e); } }
+        async function uploadNavLogo() { const input = document.getElementById('navLogoInput'); const btn = input.nextElementSibling.querySelector('button') || input.nextElementSibling; if(!input.files.length) return alert('لۆگۆ هەڵبژێرە!'); try { const path = await coreUpload(input.files[0], btn); document.getElementById('navLogoPreview').src = getFullImageUrl(path); siteData.sections.hero.navLogo = path; showMsg('سەرکەوت!'); input.value=''; } catch(e) { alert(e); } }
+        async function uploadClientLogo() { const input = document.getElementById('clientImgInput'); const btn = input.nextElementSibling.querySelector('button') || input.nextElementSibling; if(!input.files.length) return alert('لۆگۆ هەڵبژێرە!'); try { const path = await coreUpload(input.files[0], btn); buildClientLogo(path); showMsg('سەرکەوت!'); input.value=''; } catch(e) { alert(e); } }
+        async function uploadProjectImage() { const input = document.getElementById('ep-img-input'); const btn = input.nextElementSibling.querySelector('button') || input.nextElementSibling; if(!input.files.length) return; try { const path = await coreUpload(input.files[0], btn); const idx = document.getElementById('editProjIndex').value; siteData.projects[idx].images.push(path); if(!siteData.projects[idx].bannerImage) siteData.projects[idx].bannerImage = path; renderEditorImages(siteData.projects[idx].images, siteData.projects[idx].bannerImage); input.value = ''; } catch(e) { alert(e); } }
+
+        async function saveAllToGithub() {
+            if(!siteData.sections) return alert('سەرەتا زانیارییەکان بهێنە!');
+            showMsg('لە پاشەکەوتکردندایە... ⏳'); 
+            
+            try {
+                s = siteData.sections;
+                s.hero.name.ku = document.getElementById('h-name-ku').value; s.hero.name.en = document.getElementById('h-name-en').value;
+                s.hero.title.ku = document.getElementById('h-title-ku').value; s.hero.title.en = document.getElementById('h-title-en').value;
+                s.hero.imagePos = { x: document.getElementById('heroPosX').value, y: document.getElementById('heroPosY').value };
+                s.about.desc.ku = document.getElementById('a-desc-ku').value; s.about.desc.en = document.getElementById('a-desc-en').value;
+                
+                s.businesses = [];
+                document.querySelectorAll('.b-item').forEach(el => {
+                    const eLinks = [];
+                    el.querySelectorAll('.extra-link-item').forEach(linkEl => {
+                        const ku = linkEl.querySelector('.el-ku').value.trim(); const en = linkEl.querySelector('.el-en').value.trim(); const u = linkEl.querySelector('.el-u').value.trim();
+                        if(ku || en || u) eLinks.push({title: {ku, en}, url: u});
+                    });
+                    
+                    s.businesses.push({
+                        heading: { ku: el.querySelector('.b-t-ku').value, en: el.querySelector('.b-t-en').value },
+                        desc: { ku: el.querySelector('.b-d-ku').value, en: el.querySelector('.b-d-en').value },
+                        logo: el.querySelector('.b-logo-val').value,
+                        socials: { website: el.querySelector('.b-w').value, facebook: el.querySelector('.b-fb').value, instagram: el.querySelector('.b-ig').value, youtube: el.querySelector('.b-yt').value },
+                        extraLinks: eLinks
+                    });
+                });
+
+                s.cv.items = []; document.querySelectorAll('.cv-item').forEach(el => s.cv.items.push({ role: {ku: el.querySelector('.cv-r-ku').value, en: el.querySelector('.cv-r-en').value}, place: {ku: el.querySelector('.cv-p-ku').value, en: el.querySelector('.cv-p-en').value}, year: el.querySelector('.cv-y').value, desc: {ku: el.querySelector('.cv-d-ku').value, en: el.querySelector('.cv-d-en').value} }));
+                s.skills.list = []; document.querySelectorAll('.skill-item').forEach(el => s.skills.list.push({ name: {ku: el.querySelector('.sk-n-ku').value, en: el.querySelector('.sk-n-en').value}, percent: el.querySelector('.sk-p').value }));
+                s.clients.logos = []; document.querySelectorAll('.c-url').forEach(el => s.clients.logos.push(el.value));
+
+                s.contact.email = document.getElementById('c-email').value; s.contact.phone = document.getElementById('c-phone').value; 
+                s.contact.address.ku = document.getElementById('c-addr-ku').value; s.contact.address.en = document.getElementById('c-addr-en').value;
+                s.contact.formKey = document.getElementById('c-form-key').value;
+                
+                s.contact.socials.facebook = document.getElementById('s-fb').value; s.contact.socials.behance = document.getElementById('s-be').value;
+                s.contact.socials.instagram = document.getElementById('s-ig').value; s.contact.socials.youtube = document.getElementById('s-yt').value;
+                
+                s.contact.extraLinks = [];
+                document.querySelectorAll('#contactExtraLinks .extra-link-item').forEach(el => {
+                    const ku = el.querySelector('.el-ku').value.trim(); const en = el.querySelector('.el-en').value.trim(); const u = el.querySelector('.el-u').value.trim();
+                    if(ku || en || u) s.contact.extraLinks.push({title: {ku, en}, url: u});
+                });
+                
+                if(!siteData.custom) siteData.custom = { links: [], texts: [] };
+                siteData.custom.links = [];
+                document.querySelectorAll('#customLinksContainer .cl-item').forEach(el => {
+                    const ku = el.querySelector('.cl-t-ku').value; const en = el.querySelector('.cl-t-en').value; const u = el.querySelector('.cl-u').value;
+                    if(ku || en || u) siteData.custom.links.push({ title: {ku, en}, url: u });
+                });
+                
+                siteData.custom.texts = [];
+                document.querySelectorAll('#customTextsContainer .ct-item').forEach(el => {
+                    const tku = el.querySelector('.ct-t-ku').value; const ten = el.querySelector('.ct-t-en').value;
+                    const cku = el.querySelector('.ct-c-ku').value; const cen = el.querySelector('.ct-c-en').value;
+                    if(tku || ten || cku || cen) siteData.custom.texts.push({ title: {ku: tku, en: ten}, content: {ku: cku, en: cen} });
+                });
+
+                const res = await fetch(`https://api.github.com/repos/${ghData.user}/${ghData.repo}/contents/data.json`, { method: 'PUT', headers: { 'Authorization': `token ${ghData.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Update from Super Dashboard', content: btoa(unescape(encodeURIComponent(JSON.stringify(siteData, null, 2)))), sha: fileSha }) });
+                if(res.ok) { const r = await res.json(); fileSha = r.content.sha; showMsg('✅ بە سەرکەوتوویی بڵاوکرایەوە بۆ وێبسایتەکەت!'); } else { alert('هەڵە لە پاشەکەوتکردن!'); }
+            } catch(e) { console.error(e); alert('کێشە هەیە لە پاشەکەوتکردن. سەیری کۆنسۆڵ بکە.'); }
+        }
+    </script>
+</body>
+</html>
