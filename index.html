@@ -38,27 +38,24 @@
         
         <div class="bg-white/10 backdrop-blur-2xl p-8 md:p-10 rounded-[2rem] shadow-2xl border border-white/20 w-full max-w-md mx-4 relative z-10">
             <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-indigo-500 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg"><i class="fa-solid fa-lock"></i></div>
+                <div class="w-16 h-16 bg-indigo-500 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg"><i class="fa-brands fa-github"></i></div>
                 <h2 class="text-3xl font-black text-white tracking-tight">چوونەژوورەوە</h2>
+                <p class="text-slate-300 text-xs mt-2 font-medium">بەستنەوە ڕاستەوخۆ بە گیتهەبەوە</p>
             </div>
             
             <div id="firstTimeSetup" class="hidden space-y-4 mb-6">
-                <div class="bg-white/5 p-4 rounded-xl border border-white/10">
-                    <label class="text-xs font-bold text-slate-300 block mb-1">ناوی گیتهەب</label>
-                    <input type="text" id="ghUser" class="w-full bg-white/10 border-0 p-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none" dir="ltr" value="kurd-apps">
-                    <label class="text-xs font-bold text-slate-300 block mb-1 mt-3">ناوی ڕیپۆزیتۆری</label>
-                    <input type="text" id="ghRepo" class="w-full bg-white/10 border-0 p-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none" dir="ltr" value="RV">
-                    <label class="text-xs font-bold text-slate-300 block mb-1 mt-3">تۆکن (ghp_...)</label>
-                    <input type="password" id="ghToken" class="w-full bg-white/10 border-0 p-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none" dir="ltr">
+                <div class="bg-white/5 p-5 rounded-xl border border-white/10">
+                    <label class="text-xs font-bold text-slate-300 block mb-1 text-center">ناوی ڕیپۆزیتۆری (نموونە: RV)</label>
+                    <input type="text" id="ghRepo" class="w-full bg-white/10 border-0 p-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none text-center" dir="ltr" value="RV">
+                    
+                    <label class="text-xs font-bold text-slate-300 block mb-1 mt-4 text-center">تۆکنی گیتهەب (ghp_...)</label>
+                    <input type="password" id="ghToken" class="w-full bg-white/10 border-0 p-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none text-center" dir="ltr" placeholder="•••••••••••••••••••••••••••••">
                 </div>
             </div>
             
-            <label class="text-xs font-bold text-slate-300 block mb-2 text-center">پاسوۆردی داشبۆرد</label>
-            <input type="password" id="loginPass" class="w-full bg-white text-slate-900 border-0 p-4 rounded-xl mb-6 text-center text-lg font-bold shadow-inner focus:ring-4 focus:ring-indigo-500 outline-none transition-all" placeholder="••••••••">
-            
             <div id="loginError" class="hidden bg-red-500/20 text-red-200 border border-red-500/50 p-3 rounded-xl text-sm font-bold mb-6 text-center backdrop-blur-sm"></div>
             
-            <button onclick="startLoginProcess()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-black py-4 rounded-xl shadow-lg hover:shadow-indigo-500/50 transition-all duration-300" id="btnLogin">چوونەژوورەوە <i class="fa-solid fa-arrow-left mr-2"></i></button>
+            <button onclick="startLoginProcess()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-black py-4 rounded-xl shadow-lg hover:shadow-indigo-500/50 transition-all duration-300" id="btnLogin">بەستنەوە بە گیتهەب <i class="fa-solid fa-arrow-left mr-2"></i></button>
             <button onclick="resetLogin()" class="w-full text-slate-400 hover:text-white text-xs font-bold mt-6 transition-colors">ڕیسێتکردنی داتاکانی گیتهەب</button>
         </div>
     </div>
@@ -411,10 +408,10 @@
             
             <!-- کلیلەکانی وەرگێڕان -->
             <div class="bg-amber-50 border border-amber-200 p-6 rounded-[2rem] mb-8">
-                <h3 class="font-bold text-amber-800 mb-2"><i class="fa-solid fa-robot mr-2"></i>ڕێکخستنی وەرگێڕانی ژیرانە (AI)</h3>
-                <p class="text-xs text-amber-700 mb-4">ئەگەر کۆدی <code>bytez-service.js</code> کار نەکات یان کێشەی هەبێت، دەتوانیت کلیلەکە لێرە نوێ بکەیتەوە.</p>
+                <h3 class="font-bold text-amber-800 mb-2"><i class="fa-solid fa-robot mr-2"></i>ڕێکخستنی وەرگێڕانی ژیرانە (OpenRouter AI)</h3>
+                <p class="text-xs text-amber-700 mb-4">ئێستا سیستەمەکە OpenRouter بەکاردێنێت. ئەگەر کلیلەکەی ئێستات ئیشی نەکرد یان بەسەرچوو، دەتوانیت کلیلێکی نوێ لێرە دابنێیت.</p>
                 <div class="flex flex-col md:flex-row gap-3">
-                    <input type="password" id="aiApiKey" class="border border-amber-300 p-3 rounded-xl flex-1 text-sm bg-white" placeholder="API Key بنووسە..." dir="ltr">
+                    <input type="password" id="aiApiKey" class="border border-amber-300 p-3 rounded-xl flex-1 text-sm bg-white" placeholder="OpenRouter API Key بنووسە..." dir="ltr">
                     <button onclick="saveAiKey()" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-sm transition-colors">سەیڤکردنی کلیل</button>
                 </div>
             </div>
@@ -445,14 +442,25 @@
     <script>
         let ghData = null; let fileSha = ''; let siteData = {};
         let galleryCache = null; let currentGalleryTarget = ''; 
+        
+        // OpenRouter Default API Key provided by you
+        const DEFAULT_AI_KEY = "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";
 
-        if (!localStorage.getItem('encrypted_gh')) { document.getElementById('firstTimeSetup').classList.remove('hidden'); }
-        document.getElementById('loginPass').addEventListener('keypress', function (e) { if (e.key === 'Enter') startLoginProcess(); });
+        window.onload = function() {
+            if (!localStorage.getItem('encrypted_gh')) { 
+                document.getElementById('firstTimeSetup').classList.remove('hidden'); 
+            }
+        };
 
-        function resetLogin() { localStorage.removeItem('encrypted_gh'); localStorage.removeItem('ai_api_key'); location.reload(); }
-        function showLoginError(msg) { const errBox = document.getElementById('loginError'); errBox.innerText = msg; errBox.classList.remove('hidden'); document.getElementById('btnLogin').innerHTML = "چوونەژوورەوە <i class='fa-solid fa-arrow-left mr-2'></i>"; }
+        // Allow entering login on pressing Enter inside Token input
+        document.getElementById('ghToken').addEventListener('keypress', function (e) { 
+            if (e.key === 'Enter') startLoginProcess(); 
+        });
 
-        // --- AI Translation Logic ---
+        function resetLogin() { localStorage.removeItem('encrypted_gh'); location.reload(); }
+        function showLoginError(msg) { const errBox = document.getElementById('loginError'); errBox.innerText = msg; errBox.classList.remove('hidden'); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; }
+
+        // --- AI Translation Logic (Updated for OpenRouter) ---
         function saveAiKey() {
             const key = document.getElementById('aiApiKey').value.trim();
             if(key) { localStorage.setItem('ai_api_key', key); showMsg('کلیلەکە سەیڤ کرا ✅'); }
@@ -471,39 +479,36 @@
             else targetEl.value = "⏳ لە وەرگێڕاندایە...";
 
             try {
-                let apiKey = localStorage.getItem('ai_api_key');
-                // بەکارهێنانی env ئەگەر هەبوو
-                try { if(!apiKey && typeof process !== 'undefined' && process.env.MY_SECRET_API_KEY) apiKey = process.env.MY_SECRET_API_KEY; } catch(e){}
-
-                if(!apiKey) {
-                    apiKey = prompt("تکایە کلیلی API بۆ وەرگێڕانی ژیرانە (Gemini / Bytez) بنووسە:");
-                    if(!apiKey) throw new Error("No API Key");
-                    localStorage.setItem('ai_api_key', apiKey);
-                    document.getElementById('aiApiKey').value = apiKey;
-                }
+                let apiKey = localStorage.getItem('ai_api_key') || DEFAULT_AI_KEY;
 
                 const promptMsg = isRichText 
-                    ? `Translate the following Kurdish HTML content to English. Maintain all HTML tags exactly as they are. Return ONLY the raw translated HTML. Text:\n\n${sourceText}`
-                    : `Translate the following Kurdish text to English. Return ONLY the translation, without any extra text. Text:\n\n${sourceText}`;
+                    ? `Translate the following Kurdish HTML content to English. Maintain all HTML tags exactly as they are. Return ONLY the raw translated HTML without markdown formatting like \`\`\`html. Text:\n\n${sourceText}`
+                    : `Translate the following Kurdish text to English. Return ONLY the translation, without any extra text or quotes. Text:\n\n${sourceText}`;
 
-                // هەوڵدان بۆ خوێندنەوەی فایلی bytez-service یان ڕاستەوخۆ بەکارهێنانی فێچ
-                let translated = '';
-                try {
-                    const module = await import('./bytez-service.js');
-                    const result = await module.runAi(apiKey, promptMsg);
-                    translated = result.output.trim();
-                } catch(importErr) {
-                    // ئەگەر فایلەکە نەدۆزرایەوە، هەوڵدەدەین ڕاستەوخۆ API ی گێمنای بەکاربهێنین ئەگەر کلیلەکە گێمنای بێت
-                    console.log("bytez-service.js نەدۆزرایەوە، بەکارهێنانی ڕاستەوخۆی API...");
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: promptMsg }] }] })
-                    });
-                    if(!res.ok) throw new Error("API Request Failed");
-                    const data = await res.json();
-                    translated = data.candidates[0].content.parts[0].text.trim();
+                const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${apiKey}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "model": "google/gemini-2.5-flash", // Using Flash via OpenRouter for speed and excellent Kurdish support
+                        "messages": [
+                            {"role": "user", "content": promptMsg}
+                        ]
+                    })
+                });
+
+                if(!res.ok) {
+                    const errorText = await res.text();
+                    console.error("OpenRouter API Error:", errorText);
+                    throw new Error("API Request Failed");
                 }
 
+                const data = await res.json();
+                let translated = data.choices[0].message.content.trim();
+
+                // Clean up markdown block if AI adds it
                 if(translated.startsWith('```html')) translated = translated.replace(/^```html\n?/, '').replace(/\n?```$/, '');
                 else if(translated.startsWith('```')) translated = translated.replace(/^```\n?/, '').replace(/\n?```$/, '');
 
@@ -513,40 +518,64 @@
             } catch(e) {
                 console.error(e);
                 if(isRichText) targetEl.innerHTML = originalHtml; else targetEl.value = originalHtml;
-                if(e.message !== "No API Key") alert('وەرگێڕان شکستی هێنا. دڵنیابە کلیلەکەت ڕاستە.');
+                alert('وەرگێڕان شکستی هێنا. دڵنیابە هێڵی ئینتەرنێتت هەیە یان کلیلەکەت ڕاستە.');
             }
         }
 
+        // --- GitHub Login Logic (Updated to auto-fetch username) ---
         async function startLoginProcess() {
             document.getElementById('loginError').classList.add('hidden');
-            const pass = document.getElementById('loginPass').value; const stored = localStorage.getItem('encrypted_gh');
-            if (!pass) return showLoginError('تکایە پاسوۆرد بنووسە!');
-            document.getElementById('btnLogin').innerText = "لە پەیوەندیکردندایە... ⏳";
+            const stored = localStorage.getItem('encrypted_gh');
+            const btn = document.getElementById('btnLogin');
             
             if (stored) {
+                btn.innerHTML = "لە پەیوەندیکردندایە... ⏳";
                 try {
-                    const bytes = CryptoJS.AES.decrypt(stored, pass);
-                    const decryptedString = bytes.toString(CryptoJS.enc.Utf8);
-                    if (!decryptedString) throw new Error("پاسوۆرد هەڵەیە");
-                    ghData = JSON.parse(decryptedString);
-                    if (!ghData || !ghData.token) throw new Error("داتای گیتهەب تێکچووە");
-                    await testAndFetchData();
-                } catch (e) { showLoginError('پاسوۆردەکەت هەڵەیە یان داتاکان کێشەیان هەیە.'); }
+                    const decodedString = decodeURIComponent(escape(atob(stored)));
+                    if (!decodedString) throw new Error("داتای گیتهەب تێکچووە");
+                    ghData = JSON.parse(decodedString);
+                    if (!ghData || !ghData.token) throw new Error("تۆکن بوونی نییە");
+                    await testAndFetchData(false);
+                } catch (e) { showLoginError('داتاکانی ناو براوسەر کێشەیان هەیە. خوارەوە کلیک بکە بۆ ڕیسێتکردن.'); btn.innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; }
             } else {
-                const u = document.getElementById('ghUser').value.trim(); const r = document.getElementById('ghRepo').value.trim(); const t = document.getElementById('ghToken').value.trim();
-                if(!u || !r || !t) return showLoginError('پێویستە هەموو بۆشاییەکانی سەرەوە پڕبکەیتەوە!');
-                ghData = { user: u, repo: r, token: t };
-                await testAndFetchData(pass); 
+                const r = document.getElementById('ghRepo').value.trim(); 
+                const t = document.getElementById('ghToken').value.trim();
+                
+                if(!r || !t) return showLoginError('پێویستە ناوی ڕیپۆزیتۆری و تۆکنی گیتهەب پڕبکەیتەوە!');
+                
+                btn.innerHTML = "هێنانی زانیاری هەژمار... ⏳";
+                try {
+                    // خۆکارانە یوزەرنەیمەکە دەهێنێت لەڕێگەی تۆکنەکەوە
+                    const userRes = await fetch('https://api.github.com/user', {
+                        headers: { 'Authorization': `token ${t}` }
+                    });
+                    
+                    if (!userRes.ok) throw new Error("تۆکنەکە هەڵەیە یان بەسەرچووە!");
+                    
+                    const userData = await userRes.json();
+                    const u = userData.login; // یوزەرنەیمەکە
+
+                    ghData = { user: u, repo: r, token: t };
+                    btn.innerHTML = "لە پەیوەندیکردندایە... ⏳";
+                    await testAndFetchData(true); 
+                } catch (e) {
+                    showLoginError(e.message || 'کێشە لە پەیوەندی بە گیتهەبەوە هەیە.');
+                    btn.innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>";
+                }
             }
         }
 
-        async function testAndFetchData(passToSave = null) {
+        async function testAndFetchData(shouldSave = false) {
             try {
                 const res = await fetch(`https://api.github.com/repos/${ghData.user}/${ghData.repo}/contents/data.json?t=${Date.now()}`, { headers: { 'Authorization': `token ${ghData.token}` } });
                 if (res.ok) {
                     const data = await res.json(); fileSha = data.sha;
                     try { siteData = JSON.parse(decodeURIComponent(escape(atob(data.content)))); } catch (jsonErr) { return showLoginError('فایلی data.json لە گیتهەب کێشەی هەیە.'); }
-                    if (passToSave) { localStorage.setItem('encrypted_gh', CryptoJS.AES.encrypt(JSON.stringify(ghData), passToSave).toString()); }
+                    
+                    if (shouldSave) { 
+                        // پاشەکەوتکردنی داتاکان بە شێوازێکی سادەی شاراوە
+                        localStorage.setItem('encrypted_gh', btoa(unescape(encodeURIComponent(JSON.stringify(ghData))))); 
+                    }
                     
                     if(!siteData.categories) siteData.categories = ["وێب دیزاین", "مۆنتاژی ڤیدیۆ", "گرافیک دیزاین"];
                     if(!siteData.sections.businesses) siteData.sections.businesses = [];
@@ -555,9 +584,11 @@
                     
                     document.getElementById('loginScreen').classList.add('hidden');
                     populateForms(); 
-                    showMsg('✅ چوونەژوورەوە سەرکەوتوو بوو!');
-                } else if (res.status === 401) { showLoginError('تۆکنەکەی گیتهەب هەڵەیە.'); } else if (res.status === 404) { showLoginError(`ڕیپۆزیتۆرییەکە یان ناوی ئەکاونتەکە هەڵەیە.`); } else { showLoginError('هەڵەیەک هەیە لە پەیوەندی کردن بە گیتهەبەوە.'); }
-            } catch(e) { showLoginError('کێشە هەیە لە هێڵی ئینتەرنێتەکەت.'); }
+                    showMsg('✅ بەستنەوە سەرکەوتوو بوو!');
+                } else if (res.status === 401) { showLoginError('تۆکنەکەی گیتهەب هەڵەیە.'); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; } 
+                  else if (res.status === 404) { showLoginError(`ڕیپۆزیتۆرییەکە (${ghData.repo}) نەدۆزرایەوە لەناو هەژمارەکەت (${ghData.user}).`); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; } 
+                  else { showLoginError('هەڵەیەک هەیە لە پەیوەندی کردن بە گیتهەبەوە.'); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; }
+            } catch(e) { showLoginError('کێشە هەیە لە هێڵی ئینتەرنێتەکەت.'); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; }
         }
 
         function getFullImageUrl(url) {
@@ -593,7 +624,6 @@
         function showMsg(text) { const m = document.getElementById('statusMsg'); m.innerHTML = text; m.classList.remove('hidden'); m.classList.add('translate-y-4'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('translate-y-4'); }, 3000); }
         function updateImagePos() { const x = document.getElementById('heroPosX').value; const y = document.getElementById('heroPosY').value; document.getElementById('profilePreview').style.objectPosition = `${x}% ${y}%`; }
 
-        // --- Helper function to create extra link UI with Translation ---
         function createExtraLinkHTML(ku='', en='', url='') {
             const uid = Date.now() + Math.random().toString(36).substr(2, 5);
             const div = document.createElement('div');
@@ -650,7 +680,6 @@
             if(siteData.custom && siteData.custom.texts) siteData.custom.texts.forEach(t => buildCustomText(t));
         }
 
-        // --- Businesses ---
         function buildBusiness(b, index) {
             const uid = Date.now() + Math.random().toString(36).substr(2, 5);
             const div = document.createElement('div'); div.className = "b-item bg-slate-50 p-5 rounded-2xl border border-slate-200 relative mb-4";
@@ -688,7 +717,6 @@
         function addBusinessExtraLink(btn) { btn.parentElement.nextElementSibling.appendChild(createExtraLinkHTML()); }
         function addContactExtraLink(ku='', en='', url='') { document.getElementById('contactExtraLinks').appendChild(createExtraLinkHTML(ku, en, url)); }
 
-        // --- CV, Skills, Clients ---
         function buildCv(c) {
             const uid = Date.now() + Math.random().toString(36).substr(2, 5);
             const div = document.createElement('div'); div.className = "cv-item bg-white p-5 rounded-2xl border border-slate-200 relative";
@@ -724,7 +752,6 @@
             document.getElementById('clientsContainer').appendChild(div);
         }
 
-        // --- Custom Dynamic Data Forms ---
         function buildCustomLink(l) {
             const uid = Date.now() + Math.random().toString(36).substr(2, 5);
             const div = document.createElement('div'); div.className = "cl-item bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row gap-3 items-center relative";
@@ -767,7 +794,6 @@
         }
         function addCustomTextUI() { buildCustomText({title:{}, content:{}}); }
 
-        // --- Projects ---
         function renderProjectsGrid() {
             const grid = document.getElementById('projectsGrid');
             if(!siteData.projects) siteData.projects = [];
@@ -853,11 +879,9 @@
             showMsg('پڕۆژەکە بە کاتی هەڵگیرا. بۆ بڵاوکردنەوە کلیک لە سەوزەکە بکە ✔️'); closeProjectEditor();
         }
 
-        // Advanced Rich Text
         function execCmd(command, button, value=null) { document.execCommand(command, false, value); button.parentElement.parentElement.nextElementSibling.focus(); }
         function addLink(button) { const url = prompt('لینکەکە دابنێ (http://...):'); if(url) execCmd('createLink', button, url); }
 
-        // --- Gallery & Upload ---
         async function coreUpload(file, btn) {
             const ogText = btn.innerHTML;
             btn.innerHTML = "<i class='fa-solid fa-circle-notch fa-spin'></i>"; btn.disabled = true;
@@ -925,7 +949,7 @@
             showMsg('لە پاشەکەوتکردندایە... ⏳'); 
             
             try {
-                s = siteData.sections;
+                const s = siteData.sections;
                 s.hero.name.ku = document.getElementById('h-name-ku').value; s.hero.name.en = document.getElementById('h-name-en').value;
                 s.hero.title.ku = document.getElementById('h-title-ku').value; s.hero.title.en = document.getElementById('h-title-en').value;
                 s.hero.imagePos = { x: document.getElementById('heroPosX').value, y: document.getElementById('heroPosY').value };
@@ -983,15 +1007,16 @@
                 if(res.ok) { const r = await res.json(); fileSha = r.content.sha; showMsg('✅ بە سەرکەوتوویی بڵاوکرایەوە بۆ وێبسایتەکەت!'); } else { alert('هەڵە لە پاشەکەوتکردن!'); }
             } catch(e) { console.error(e); alert('کێشە هەیە لە پاشەکەوتکردن. سەیری کۆنسۆڵ بکە.'); }
         }
+        
         if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').then(registration => {
-        console.log('ServiceWorker registration successful with scope: ', registration.scope);
-      }, err => {
-        console.log('ServiceWorker registration failed: ', err);
-      });
-    });
-  }
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful');
+                }, err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
     </script>
 </body>
 </html>
