@@ -9,7 +9,7 @@ let ghData = null; let fileSha = ''; let siteData = {};
 let galleryCache = null; let currentGalleryTarget = ''; 
 
 // کلیلێکی دیفۆڵت
-const DEFAULT_AI_KEY = "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";
+const DEFAULT_AI_KEY = "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";
 
 window.onload = async function() {
     const urlParams = new URLSearchParams(window.location.search);
