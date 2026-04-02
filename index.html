@@ -40,22 +40,20 @@
             <div class="text-center mb-8">
                 <div class="w-16 h-16 bg-indigo-500 text-white rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-lg"><i class="fa-brands fa-github"></i></div>
                 <h2 class="text-3xl font-black text-white tracking-tight">چوونەژوورەوە</h2>
-                <p class="text-slate-300 text-xs mt-2 font-medium">بەستنەوە ڕاستەوخۆ بە گیتهەبەوە</p>
+                <p class="text-slate-300 text-xs mt-2 font-medium">بەستنەوە ڕاستەوخۆ بە گیتهەبەوە (OAuth)</p>
             </div>
             
             <div id="firstTimeSetup" class="hidden space-y-4 mb-6">
-                <div class="bg-white/5 p-5 rounded-xl border border-white/10">
-                    <label class="text-xs font-bold text-slate-300 block mb-1 text-center">ناوی ڕیپۆزیتۆری (نموونە: RV)</label>
-                    <input type="text" id="ghRepo" class="w-full bg-white/10 border-0 p-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none text-center" dir="ltr" value="RV">
-                    
-                    <label class="text-xs font-bold text-slate-300 block mb-1 mt-4 text-center">تۆکنی گیتهەب (ghp_...)</label>
-                    <input type="password" id="ghToken" class="w-full bg-white/10 border-0 p-3 rounded-lg text-white text-sm focus:ring-2 focus:ring-indigo-400 outline-none text-center" dir="ltr" placeholder="•••••••••••••••••••••••••••••">
+                <div class="bg-white/5 p-5 rounded-xl border border-white/10 text-center">
+                    <i class="fa-solid fa-shield-halved text-4xl text-indigo-400 mb-3"></i>
+                    <h3 class="text-white font-bold mb-2">چوونەژوورەوەی پارێزراو</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">بۆ دڵنیابوون لە ئاسایش، چوونەژوورەوە تەنها لە ڕێگەی هەژماری فەرمی گیتهەبی خۆتەوە ڕێگەپێدراوە.</p>
                 </div>
             </div>
             
             <div id="loginError" class="hidden bg-red-500/20 text-red-200 border border-red-500/50 p-3 rounded-xl text-sm font-bold mb-6 text-center backdrop-blur-sm"></div>
             
-            <button onclick="startLoginProcess()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-black py-4 rounded-xl shadow-lg hover:shadow-indigo-500/50 transition-all duration-300" id="btnLogin">بەستنەوە بە گیتهەب <i class="fa-solid fa-arrow-left mr-2"></i></button>
+            <button onclick="startLoginProcess()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-black py-4 rounded-xl shadow-lg hover:shadow-indigo-500/50 transition-all duration-300" id="btnLogin">چوونەژوورەوە بە گیتهەب <i class="fa-brands fa-github mr-2"></i></button>
             <button onclick="resetLogin()" class="w-full text-slate-400 hover:text-white text-xs font-bold mt-6 transition-colors">ڕیسێتکردنی داتاکانی گیتهەب</button>
         </div>
     </div>
@@ -440,25 +438,42 @@
     </main>
 
     <script>
+        // ================= GITHUB OAUTH SETTINGS ================= //
+        // 1. بڕۆ بۆ Github -> Settings -> Developer Settings -> OAuth Apps -> New
+        // 2. Client ID و Client Secret وەرگرە و لێرە دایبنێ
+        const OAUTH_CLIENT_ID = "Ov23licUZNUibVnGmgD4"; 
+        const OAUTH_CLIENT_SECRET = "bb6529ce89578246b7cf72ff454b994f5800f07e"; 
+        
+        // یوزەرنەیمی ئەکاونتەکەی خۆت لێرە دابنێ بە دروستی، بۆ ئەوەی کەسی تر نەتوانێت بچێتە ژوورەوە
+        const ALLOWED_USERNAME = "kurd-apps"; 
+        
+        // ناوی ئەو ڕیپۆزیتۆرییەی کە وێبسایتەکەی لەسەرە (وەک نموونە: RV)
+        const TARGET_REPO = "RV"; 
+        // ========================================================= //
+
         let ghData = null; let fileSha = ''; let siteData = {};
         let galleryCache = null; let currentGalleryTarget = ''; 
         
-        // OpenRouter Default API Key provided by you
-        const DEFAULT_AI_KEY = "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";
+        const DEFAULT_AI_KEY = "sk-or-v1-597e9524ae38619127593df16ea4fc52f83ca5df214629ac30ee8f60f51c56RV";
 
-        window.onload = function() {
-            if (!localStorage.getItem('encrypted_gh')) { 
+        window.onload = async function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+
+            if (code) {
+                document.getElementById('firstTimeSetup').classList.remove('hidden');
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('btnLogin').innerHTML = "سەلماندنی هەژمار... ⏳";
+                await handleOAuthCallback(code);
+            } else if (!localStorage.getItem('encrypted_gh')) { 
                 document.getElementById('firstTimeSetup').classList.remove('hidden'); 
+            } else {
+                startLoginProcess(); // Auto login if storage exists
             }
         };
 
-        // Allow entering login on pressing Enter inside Token input
-        document.getElementById('ghToken').addEventListener('keypress', function (e) { 
-            if (e.key === 'Enter') startLoginProcess(); 
-        });
-
         function resetLogin() { localStorage.removeItem('encrypted_gh'); location.reload(); }
-        function showLoginError(msg) { const errBox = document.getElementById('loginError'); errBox.innerText = msg; errBox.classList.remove('hidden'); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; }
+        function showLoginError(msg) { const errBox = document.getElementById('loginError'); errBox.innerText = msg; errBox.classList.remove('hidden'); document.getElementById('btnLogin').innerHTML = "چوونەژوورەوە بە گیتهەب <i class='fa-brands fa-github mr-2'></i>"; }
 
         // --- AI Translation Logic (Updated for OpenRouter) ---
         function saveAiKey() {
@@ -492,23 +507,18 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        "model": "google/gemini-2.5-flash", // Using Flash via OpenRouter for speed and excellent Kurdish support
+                        "model": "google/gemini-2.5-flash", 
                         "messages": [
                             {"role": "user", "content": promptMsg}
                         ]
                     })
                 });
 
-                if(!res.ok) {
-                    const errorText = await res.text();
-                    console.error("OpenRouter API Error:", errorText);
-                    throw new Error("API Request Failed");
-                }
+                if(!res.ok) throw new Error("API Request Failed");
 
                 const data = await res.json();
                 let translated = data.choices[0].message.content.trim();
 
-                // Clean up markdown block if AI adds it
                 if(translated.startsWith('```html')) translated = translated.replace(/^```html\n?/, '').replace(/\n?```$/, '');
                 else if(translated.startsWith('```')) translated = translated.replace(/^```\n?/, '').replace(/\n?```$/, '');
 
@@ -522,7 +532,7 @@
             }
         }
 
-        // --- GitHub Login Logic (Updated to auto-fetch username) ---
+        // --- GitHub OAuth Logic ---
         async function startLoginProcess() {
             document.getElementById('loginError').classList.add('hidden');
             const stored = localStorage.getItem('encrypted_gh');
@@ -536,32 +546,64 @@
                     ghData = JSON.parse(decodedString);
                     if (!ghData || !ghData.token) throw new Error("تۆکن بوونی نییە");
                     await testAndFetchData(false);
-                } catch (e) { showLoginError('داتاکانی ناو براوسەر کێشەیان هەیە. خوارەوە کلیک بکە بۆ ڕیسێتکردن.'); btn.innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; }
+                } catch (e) { showLoginError('داتاکانی ناو براوسەر کێشەیان هەیە. خوارەوە کلیک بکە بۆ ڕیسێتکردن.'); }
             } else {
-                const r = document.getElementById('ghRepo').value.trim(); 
-                const t = document.getElementById('ghToken').value.trim();
-                
-                if(!r || !t) return showLoginError('پێویستە ناوی ڕیپۆزیتۆری و تۆکنی گیتهەب پڕبکەیتەوە!');
-                
-                btn.innerHTML = "هێنانی زانیاری هەژمار... ⏳";
-                try {
-                    // خۆکارانە یوزەرنەیمەکە دەهێنێت لەڕێگەی تۆکنەکەوە
-                    const userRes = await fetch('https://api.github.com/user', {
-                        headers: { 'Authorization': `token ${t}` }
-                    });
-                    
-                    if (!userRes.ok) throw new Error("تۆکنەکە هەڵەیە یان بەسەرچووە!");
-                    
-                    const userData = await userRes.json();
-                    const u = userData.login; // یوزەرنەیمەکە
-
-                    ghData = { user: u, repo: r, token: t };
-                    btn.innerHTML = "لە پەیوەندیکردندایە... ⏳";
-                    await testAndFetchData(true); 
-                } catch (e) {
-                    showLoginError(e.message || 'کێشە لە پەیوەندی بە گیتهەبەوە هەیە.');
-                    btn.innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>";
+                if (OAUTH_CLIENT_ID === "YOUR_GITHUB_OAUTH_CLIENT_ID") {
+                    showLoginError("پێویستە Client ID بنووسیت لەناو کۆدەکەدا پێش بەکارهێنان!");
+                    return;
                 }
+                btn.innerHTML = "بەستنەوە... ⏳";
+                const redirectUri = window.location.origin + window.location.pathname;
+                window.location.href = `https://github.com/login/oauth/authorize?client_id=${OAUTH_CLIENT_ID}&scope=repo,user&redirect_uri=${encodeURIComponent(redirectUri)}`;
+            }
+        }
+
+        async function handleOAuthCallback(code) {
+            try {
+                // بەکارهێنانی پڕۆکسی بۆ گۆڕینی کۆد بە تۆکن (چونکە لە براوسەرەوە ڕێگەپێدراو نییە ڕاستەوخۆ بەبێ پڕۆکسی)
+                const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent("https://github.com/login/oauth/access_token");
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        client_id: OAUTH_CLIENT_ID,
+                        client_secret: OAUTH_CLIENT_SECRET,
+                        code: code
+                    })
+                });
+
+                if (!response.ok) throw new Error("کێشە لە وەرگرتنی تۆکنی چوونەژوورەوە هەیە");
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error_description || "هەڵەی OAuth");
+
+                const accessToken = data.access_token;
+
+                // هێنانی ناوی ئەکاونتەکە
+                const userRes = await fetch('https://api.github.com/user', {
+                    headers: { 'Authorization': `token ${accessToken}` }
+                });
+
+                if (!userRes.ok) throw new Error("کێشە لە سەلماندنی هەژمارەکەدا هەیە");
+                
+                const userData = await userRes.json();
+                const username = userData.login;
+
+                // 🚨 پاراستن: دڵنیابوون لەوەی تەنها هەژماری دیاریکراو دەتوانێت بچێتە ژوورەوە
+                if (username.toLowerCase() !== ALLOWED_USERNAME.toLowerCase()) {
+                    throw new Error(`ببورە! هەژماری "${username}" ڕێگەپێدراو نییە. تەنها خاوەنی ماڵپەڕەکە دەتوانێت بچێتە ژوورەوە.`);
+                }
+
+                ghData = { user: username, repo: TARGET_REPO, token: accessToken };
+                await testAndFetchData(true);
+                
+                // سڕینەوەی کۆدەکە لەسەرەوەی لینکی سایتەکە دوای سەرکەوتن
+                window.history.replaceState({}, document.title, window.location.pathname);
+
+            } catch (error) {
+                showLoginError(error.message);
+                document.getElementById('btnLogin').innerHTML = "دووبارە چوونەژوورەوە <i class='fa-solid fa-rotate-right mr-2'></i>";
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
 
@@ -573,7 +615,6 @@
                     try { siteData = JSON.parse(decodeURIComponent(escape(atob(data.content)))); } catch (jsonErr) { return showLoginError('فایلی data.json لە گیتهەب کێشەی هەیە.'); }
                     
                     if (shouldSave) { 
-                        // پاشەکەوتکردنی داتاکان بە شێوازێکی سادەی شاراوە
                         localStorage.setItem('encrypted_gh', btoa(unescape(encodeURIComponent(JSON.stringify(ghData))))); 
                     }
                     
@@ -585,10 +626,10 @@
                     document.getElementById('loginScreen').classList.add('hidden');
                     populateForms(); 
                     showMsg('✅ بەستنەوە سەرکەوتوو بوو!');
-                } else if (res.status === 401) { showLoginError('تۆکنەکەی گیتهەب هەڵەیە.'); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; } 
-                  else if (res.status === 404) { showLoginError(`ڕیپۆزیتۆرییەکە (${ghData.repo}) نەدۆزرایەوە لەناو هەژمارەکەت (${ghData.user}).`); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; } 
-                  else { showLoginError('هەڵەیەک هەیە لە پەیوەندی کردن بە گیتهەبەوە.'); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; }
-            } catch(e) { showLoginError('کێشە هەیە لە هێڵی ئینتەرنێتەکەت.'); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-solid fa-arrow-left mr-2'></i>"; }
+                } else if (res.status === 401) { showLoginError('پەیوەندی بەسەرچووە، تکایە دووبارە بچۆ ژوورەوە.'); resetLogin(); } 
+                  else if (res.status === 404) { showLoginError(`ڕیپۆزیتۆرییەکە (${ghData.repo}) نەدۆزرایەوە لەناو هەژمارەکەت (${ghData.user}).`); resetLogin(); } 
+                  else { showLoginError('هەڵەیەک هەیە لە پەیوەندی کردن بە گیتهەبەوە.'); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-brands fa-github mr-2'></i>"; }
+            } catch(e) { showLoginError('کێشە هەیە لە هێڵی ئینتەرنێتەکەت.'); document.getElementById('btnLogin').innerHTML = "بەستنەوە بە گیتهەب <i class='fa-brands fa-github mr-2'></i>"; }
         }
 
         function getFullImageUrl(url) {
