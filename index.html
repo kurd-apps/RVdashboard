@@ -87,7 +87,7 @@
             </div>
         </div>
         <nav class="flex-1 px-4 flex flex-col gap-2 overflow-y-auto hide-scrollbar" id="sidebarNavDesktop">
-            <button onclick="switchTab('hero')" data-target="hero" class="side-btn flex items-center gap-3 w-full text-right px-4 py-3.5 rounded-xl font-bold text-sm bg-indigo-600 text-white transition-all"><i class="fa-solid fa-user w-5 text-center"></i> سەرەکی و وێنە</button>
+            <button onclick="switchTab('hero')" data-target="hero" class="side-btn active flex items-center gap-3 w-full text-right px-4 py-3.5 rounded-xl font-bold text-sm bg-indigo-600 text-white transition-all"><i class="fa-solid fa-user w-5 text-center"></i> سەرەکی و وێنە</button>
             <button onclick="switchTab('business')" data-target="business" class="side-btn flex items-center gap-3 w-full text-right px-4 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 hover:text-white transition-all"><i class="fa-solid fa-building w-5 text-center"></i> بزنسەکان</button>
             <button onclick="switchTab('cv')" data-target="cv" class="side-btn flex items-center gap-3 w-full text-right px-4 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 hover:text-white transition-all"><i class="fa-solid fa-file-alt w-5 text-center"></i> ئەزموون</button>
             <button onclick="switchTab('projects')" data-target="projects" class="side-btn flex items-center gap-3 w-full text-right px-4 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 hover:text-white transition-all"><i class="fa-solid fa-rocket w-5 text-center"></i> پڕۆژەکان</button>
@@ -210,27 +210,28 @@
 
         <!-- CV & Skills & Clients -->
         <div id="tab-cv" class="tab-content max-w-5xl mx-auto">
+            <!-- CV -->
             <div class="mb-12">
-                <div class="flex justify-between items-center mb-6">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-200 pb-4">
                     <h2 class="text-3xl font-black text-slate-800 tracking-tight">📄 ئەزموونەکان (CV)</h2>
-                    <button onclick="addCvUI()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all">+ زیادکردن</button>
+                    <button onclick="addCvUI()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all">+ ئەزموون</button>
                 </div>
-                <!-- CV Container (Redesigned) -->
                 <div id="cvContainer" class="flex flex-col gap-6"></div>
             </div>
 
-            <div class="mb-12 border-t border-slate-200 pt-12">
-                <div class="flex justify-between items-center mb-6">
+            <!-- Skills -->
+            <div class="mb-12 pt-6">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-200 pb-4">
                     <h2 class="text-3xl font-black text-slate-800 tracking-tight">💡 شارەزاییەکان</h2>
-                    <button onclick="addSkillUI()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all">+ زیادکردن</button>
+                    <button onclick="addSkillUI()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all">+ شارەزایی</button>
                 </div>
-                <!-- Skills Container (Redesigned) -->
-                <div id="skillsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                <div id="skillsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
             </div>
 
-            <div class="border-t border-slate-200 pt-12">
-                <h2 class="text-3xl font-black text-slate-800 tracking-tight mb-2">٤. هاوبەشەکان (کۆمپانیاکان)</h2>
-                <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 flex flex-col md:flex-row gap-3 items-center">
+            <!-- Clients -->
+            <div class="pt-6">
+                <h2 class="text-3xl font-black text-slate-800 tracking-tight mb-4 border-b border-slate-200 pb-4">🤝 هاوبەشەکان (کۆمپانیاکان)</h2>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 mb-6 flex flex-col md:flex-row gap-3 items-center shadow-sm">
                     <input type="file" id="clientImgInput" class="bg-slate-50 border border-slate-200 p-2 rounded-xl flex-1 text-sm w-full outline-none focus:border-indigo-500">
                     <div class="flex gap-2 w-full md:w-auto">
                         <button onclick="uploadClientLogo()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-bold text-sm flex-1 shadow-sm transition-colors">ئەپلۆد</button>
@@ -293,7 +294,7 @@
             
             <div id="projectsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
 
-            <!-- Project Editor Full (Restored) -->
+            <!-- Project Editor Full -->
             <div id="projectEditorModal" class="fixed inset-0 md:relative md:inset-auto z-[110] md:z-auto bg-slate-50 md:bg-white p-4 md:p-8 md:rounded-3xl overflow-y-auto md:overflow-visible hidden shadow-xl md:shadow-sm md:border border-slate-200 mt-6 transition-all">
                 <div class="flex justify-between items-center border-b border-slate-200 pb-5 mb-6 sticky top-0 bg-slate-50 md:bg-white z-20 md:static pt-2 md:pt-0">
                     <h3 class="text-xl md:text-2xl font-black text-indigo-700">دەستکاریکردنی پڕۆژە</h3>
@@ -447,6 +448,8 @@
             </div>
         </div>
     </main>
+
+    <!-- ====== فایلی جاڤاسکڕێپت لێرە بەستراوەتەوە ====== -->
     <script src="app.js"></script>
 </body>
 </html>
