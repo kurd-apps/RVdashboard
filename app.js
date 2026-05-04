@@ -493,6 +493,7 @@ function saveProjectEditor() {
     pr.shortDesc.ku = document.getElementById('ep-s-ku').value; pr.shortDesc.en = document.getElementById('ep-s-en').value;
     pr.fullDesc.ku = document.getElementById('ep-f-ku').innerHTML; pr.fullDesc.en = document.getElementById('ep-f-en').innerHTML;
     pr.videoLink = document.getElementById('ep-v').value; pr.websiteLink = document.getElementById('ep-web').value;
+    proj.price = document.getElementById('ep-price').value.trim();
     pr.images = []; document.querySelectorAll('.ep-img-val').forEach(el => pr.images.push(el.value));
     pr.extraLinks = [];
     document.querySelectorAll('#ep-extra-links .extra-link-item').forEach(el => {
